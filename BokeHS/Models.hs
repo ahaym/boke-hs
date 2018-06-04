@@ -1,12 +1,18 @@
 {-# LANGUAGE DeriveGeneric #-}
 {-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE FlexibleContexts #-}
+{-# LANGUAGE AutoDeriveTypeable #-}
+
 module BokeHS.Models where
 
 import Data.Word
-import Data.Text
-import Data.Aeson
+import Data.Text (pack, Text)
 import Data.Scientific
 import GHC.Generics
+import GHC.Exts (fromList)
+import Control.Monad.State
+import Data.Aeson
+import qualified Data.HashMap.Lazy as HML
 
 --encodes a BokehJS Ref ID
 newtype BID = BID Text deriving (Eq, Show, Generic)
@@ -16,19 +22,28 @@ instance ToJSON BID
 newtype BType = BType Text deriving (Eq, Show, Generic)
 instance ToJSON BType
 
---encodes a BokehJS Ref
-data BRef = BRef {
-        refID :: BID,
-        refType :: BType
-    } deriving Show
-
 {- Class for types that can be serialized to BokehJS.
- - Can either be a primitive type whose value can be directly inserted (Left).
- - Or a ref; the BRef is inserted in place of the value, and the value itself 
- - is added to the reference list of the BokehJS graph.
+ - Can either be a primitive type whose value can be directly inserted (BPrim).
+ - Or a ref; the BRef (Constructed from the typename)is inserted in place of the
+ - value, and the value itself is added to the reference list of the BokehJS graph.
  -}
+
+type SerialEnv = [Value]
 class Bokeh a where
-    makeNode :: a -> BID -> Either Value (BRef, Value)
+    makePrim :: a -> Value
+    serializeNode :: BID -> a -> State SerialEnv Value
+    makePrim v = Null
+    serializeNode _ o = return $ makePrim o
+    {-# MINIMAL makePrim | serializeNode #-}
+
+makeRef :: (BID -> a -> (Text, Value)) -> BID -> a -> State SerialEnv Value
+makeRef f obj bid = return $ merge_aeson [footer, body]
+    where
+        (btype, body) = f obj bid
+        merge_aeson :: [Value] -> Value
+        merge_aeson = Object . HML.unions . map (\(Object x) -> x)
+        footer = Object $ fromList [("id", String "foo-bar3"), ("type", String btype)]
+
 
 data Plot = Plot {
     backgroundFill :: Color,
@@ -43,11 +58,29 @@ data Plot = Plot {
     yScale :: Scale
     } deriving Show
 
-data Color = Blue | Grey deriving Show
+data Color = Purple | White | Lavender deriving Show
+
+instance Bokeh Color where
+    makePrim color = toJSON colorString
+        where
+            colorString :: Text
+            colorString = case color of
+                Purple -> "purple"
+                White -> "white"
+                Lavender -> "lavender"
 
 newtype Title = Title Text deriving Show
-
-data Direction = Left | Right | Above | Below | Center deriving (Eq, Show)
+instance Bokeh Title where
+    serializeNode = makeRef makeNode where
+        makeNode (BID idtxt) (Title titletext)  = ("Title", titleObj)
+            where
+                 titleObj = Object $ fromList [
+                    ("attributes", Object $ fromList [
+                        ("plot", Null), ("text", String titletext)]),
+                    ("id", String idtxt),
+                    ("type", String "Title")
+                    ]
+data Direction = BLeft | BRight | BAbove | BBelow | BCenter deriving (Eq, Show)
 
 data Renderer = ARend Direction Axis | GRend GlyphRenderer deriving Show
 
@@ -125,7 +158,7 @@ samplesrc = CDS {
 
 examplePlot :: Plot
 examplePlot = Plot{
-       backgroundFill = Grey,
+       backgroundFill = Lavender,
        width = 400,
        height = 400,
        renderers = [xaxis, yaxis, lrend],
@@ -136,9 +169,9 @@ examplePlot = Plot{
        xScale = LinearScale,
        yScale = LinearScale
     } where
-        xaxis = ARend Below ax
-        yaxis = ARend Above ax
+        xaxis = ARend BBelow ax
+        yaxis = ARend BAbove ax
         ax = LinearAxis{formatter=BasicTickFormatter, ticker=BasicTicker}
         lrend = GRend GlyphRenderer { dataSource = samplesrc,
             glyph = lin, vie = CDSView samplesrc}
-        lin = Line Blue (Field "x") (Field "y")
+        lin = Line Lavender (Field "x") (Field "y")
