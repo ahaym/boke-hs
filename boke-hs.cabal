@@ -62,7 +62,8 @@ library
                        text >= 1.2,
                        scientific,
                        mtl,
-                       unordered-containers >= 0.2.9.0
+                       unordered-containers >= 0.2.9.0,
+                       bytestring
 
   -- Directories containing source files.
   -- hs-source-dirs:

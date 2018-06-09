@@ -14,6 +14,9 @@ import Control.Monad.State
 import Data.Aeson
 import qualified Data.HashMap.Lazy as HML
 
+l2o :: [(Text, Value)] -> Value
+l2o = Object . fromList
+
 --encodes a BokehJS Ref ID
 newtype BID = BID Text deriving (Eq, Show, Generic)
 instance ToJSON BID
@@ -22,28 +25,65 @@ instance ToJSON BID
 newtype BType = BType Text deriving (Eq, Show, Generic)
 instance ToJSON BType
 
+newtype BNode = BNode Value deriving (Show, Generic)
+instance ToJSON BNode 
+
+--holds serialization state
+data SerialEnv = SerialEnv {
+        nodes :: [BNode], --list of nodes in the graph
+        idCount :: Int --current BID generation state 
+    } deriving Show
+
 {- Class for types that can be serialized to BokehJS.
- - Can either be a primitive type whose value can be directly inserted (BPrim).
- - Or a ref; the BRef (Constructed from the typename)is inserted in place of the
- - value, and the value itself is added to the reference list of the BokehJS graph.
+ - Can either be a primitive type whose value can be directly inserted (makePrim).
+ - Or a ref, trivially constructed from the typename, is inserted in place of the
+ - value, and the value itself is added to the node list of the BokehJS graph.
  -}
 
-type SerialEnv = [Value]
 class Bokeh a where
     makePrim :: a -> Value
-    serializeNode :: BID -> a -> State SerialEnv Value
+    serializeNode :: a -> State SerialEnv Value
     makePrim v = Null
-    serializeNode _ o = return $ makePrim o
+    serializeNode o = return $ makePrim o
     {-# MINIMAL makePrim | serializeNode #-}
 
-makeRef :: (BID -> a -> (Text, Value)) -> BID -> a -> State SerialEnv Value
-makeRef f obj bid = return $ merge_aeson [footer, body]
-    where
-        (btype, body) = f obj bid
-        merge_aeson :: [Value] -> Value
-        merge_aeson = Object . HML.unions . map (\(Object x) -> x)
-        footer = Object $ fromList [("id", String "foo-bar3"), ("type", String btype)]
+instance Bokeh Value where
+    makePrim = id
 
+--Helper function for getting new BIDs
+newBID :: State SerialEnv BID
+newBID = do
+    env <- get
+    let curID = idCount env
+    put env{idCount = curID + 1}
+    return $ (BID . pack . show) curID
+
+--gets the current ID
+--probably should use an MTL-style typeclass for this stuff
+--to ensure no modifications
+curID :: State SerialEnv BID
+curID = (BID . pack . show . idCount) <$> get
+
+--Helper function for adding nodes to the node list
+addNode :: BNode -> State SerialEnv ()
+addNode newVal = do
+    env <- get
+    let vals = nodes env
+    put env{nodes=newVal : vals}
+
+--helper function for conveniently turning a list of attributes into a seralizing function
+type Attributes = [(Text, Value)]
+makeRef :: BType -> Attributes -> State SerialEnv Value
+makeRef btype attrs = do
+    curID <- newBID
+    let footer = l2o [("id", toJSON curID), ("type", toJSON btype)]
+        attrObj = l2o [("attributes", (Object . fromList) attrs)]
+        node = (BNode . mergeAeson) [footer, attrObj]
+    addNode node
+    return footer
+    where 
+        mergeAeson :: [Value] -> Value
+        mergeAeson = Object . HML.unions . map (\(Object x) -> x)
 
 data Plot = Plot {
     backgroundFill :: Color,
@@ -58,6 +98,13 @@ data Plot = Plot {
     yScale :: Scale
     } deriving Show
 
+instance Bokeh Plot where
+    serializeNode plt = do
+        title_ <- serializeNode (title plt)
+        let plotObj = [("title", title_)]
+        makeRef (BType "Plot") plotObj
+       
+
 data Color = Purple | White | Lavender deriving Show
 
 instance Bokeh Color where
@@ -71,25 +118,33 @@ instance Bokeh Color where
 
 newtype Title = Title Text deriving Show
 instance Bokeh Title where
-    serializeNode = makeRef makeNode where
-        makeNode (BID idtxt) (Title titletext)  = ("Title", titleObj)
+    serializeNode (Title titletext) = makeRef (BType "Title") titleObj
             where
-                 titleObj = Object $ fromList [
+                 titleObj = [
                     ("attributes", Object $ fromList [
-                        ("plot", Null), ("text", String titletext)]),
-                    ("id", String idtxt),
-                    ("type", String "Title")
+                        ("plot", Null), ("text", String titletext)])
                     ]
 data Direction = BLeft | BRight | BAbove | BBelow | BCenter deriving (Eq, Show)
 
 data Renderer = ARend Direction Axis | GRend GlyphRenderer deriving Show
 
-newtype Field = Field Text deriving Show
+newtype Field = Field Text deriving (Show, Generic)
+instance ToJSON Field
 
 data Axis = LinearAxis {
         formatter :: Formatter,
         ticker :: Ticker
     } deriving Show
+
+data AxisWrapper = AxWrap Value Axis
+
+instance Bokeh AxisWrapper where
+    --TODO: Validate Parent Value
+    serializeNode  (AxWrap parentRef (LinearAxis form tick)) = do
+        formatter_ <- serializeNode form 
+        ticker_ <- serializeNode tick
+        let axisObj = [("formatter", formatter_), ("plot", parentRef), ("ticker", ticker_)]
+        makeRef (BType "LinearAxis") axisObj
 
 data DataSource = CDS {
         cols :: [(Field, [Scientific])],
@@ -104,22 +159,45 @@ data GlyphRenderer = GlyphRenderer {
         vie :: View -- possibly not needed
     } deriving Show
 
-data View = CDSView DataSource | Views_ deriving Show
+data View = CDSView | Views_ deriving Show
+data ViewWrapper = VWrap Value View
 
-data Scale = LinearScale | Scales_ deriving Show
+instance Bokeh ViewWrapper where
+    serializeNode (VWrap cdsRef CDSView) = makeRef (BType "CDSView") viewObj
+        where viewObj = [("source", cdsRef)]
 
-data Ticker = BasicTicker | Ticker_ deriving Show
+data Scale = LinearScale deriving Show
+
+instance Bokeh Scale where
+    serializeNode LinearScale = makeRef (BType "LinearScale") []
+
+data Ticker = BasicTicker deriving Show
+ 
+instance Bokeh Ticker where
+    serializeNode BasicTicker = makeRef (BType "BasicTicker") []
+
 
 data Formatter = BasicTickFormatter deriving Show
 
+instance Bokeh Formatter where
+    serializeNode BasicTickFormatter = makeRef (BType "BasicTickFormatter") []
+
+
 data Range = Range1d {
+        callback :: Maybe (),
         start :: Scientific,
         end :: Scientific
     } deriving Show
 
 data SelectionPolicy = UnionRenderers | Policies_ deriving Show
 
+instance Bokeh SelectionPolicy where
+    serializeNode UnionRenderers = makeRef (BType "UnionRenderers") []
+
 data Selection = Selection | Sels_ deriving Show
+
+instance Bokeh Selection where
+    serializeNode Selection = makeRef (BType "UnionRenderers") []
 
 data Glyph = Line {
         lineColor :: Color,
@@ -127,8 +205,26 @@ data Glyph = Line {
         y :: Field
     } deriving Show
 
-data Toolbar = ToolBar --active_drag, active_inspect, active_scroll, active_tap 
+instance Bokeh Glyph where
+    serializeNode (Line color x y) = makeRef (BType "Line") [("line_color", makePrim color), 
+        ("x", l2o [("field", toJSON x)]),("y", l2o [("field", toJSON y)])]
+
+data Auto a = Auto | NotAuto a deriving Show
+instance (Bokeh a) => Bokeh (Auto a) where
+    serializeNode Auto = return $ String "auto"
+    serializeNode (NotAuto o) = serializeNode o
+
+--active_drag, active_inspect, active_scroll, active_tap 
+data Toolbar = Toolbar {    
+        activeDrag :: Auto Value,
+        activeInspect :: Auto Value,
+        activeScroll :: Auto Value,
+        activeTap :: Auto Value
+    }
     deriving Show
+
+defaultToolbar :: Toolbar
+defaultToolbar = Toolbar Auto Auto Auto Auto
 
 samplesrc :: DataSource
 samplesrc = CDS {
@@ -163,9 +259,9 @@ examplePlot = Plot{
        height = 400,
        renderers = [xaxis, yaxis, lrend],
        title = Title "Sample Haskell Plot",
-       toolbar = ToolBar,
-       xRange = Range1d (-0.5) 20,
-       yRange = Range1d (-0.5) 20,
+       toolbar = defaultToolbar,
+       xRange = Range1d Nothing (-0.5) 20,
+       yRange = Range1d Nothing (-0.5) 20,
        xScale = LinearScale,
        yScale = LinearScale
     } where
@@ -173,5 +269,5 @@ examplePlot = Plot{
         yaxis = ARend BAbove ax
         ax = LinearAxis{formatter=BasicTickFormatter, ticker=BasicTicker}
         lrend = GRend GlyphRenderer { dataSource = samplesrc,
-            glyph = lin, vie = CDSView samplesrc}
+            glyph = lin, vie = CDSView}
         lin = Line Lavender (Field "x") (Field "y")
