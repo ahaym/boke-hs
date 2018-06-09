@@ -12,6 +12,11 @@ import GHC.Exts (fromList)
 import Control.Monad.State
 import Data.Aeson
 import qualified Data.HashMap.Lazy as HML
+import qualified Data.ByteString.Lazy as BS
+import Data.Aeson.Encode.Pretty (encodePretty)
+
+bokehVersion :: Text
+bokehVersion = "0.12.16"
 
 mergeAeson :: [Value] -> Value
 mergeAeson = Object . HML.unions . map (\(Object o) -> o)
@@ -98,8 +103,8 @@ data Plot = Plot {
     yScale :: Scale
     } deriving Show
 
-instance Bokeh Plot where
-    serializeNode plt@Plot{height = plot_height, width = plot_width} = do
+serializePlot :: Plot -> State SerialEnv (BID, Value)
+serializePlot plt@Plot{height = plot_height, width = plot_width} = do
         curID <- newBID
         let footer = l2o [(pack "id", toJSON curID), (pack "type", toJSON $ BType"Plot")]
         background_fill_ <- serializeNode (backgroundFill plt)
@@ -134,7 +139,7 @@ instance Bokeh Plot where
             plotObj = l2o [("attributes", plotAttrs)]
             node = (BNode . mergeAeson) [footer, plotObj]
         addNode node
-        return footer
+        return (curID,footer)
         where
             dPred _ (Nothing, _) = False
             dPred dir0 (Just dir1, _) = dir0 == dir1
@@ -143,6 +148,28 @@ instance Bokeh Plot where
                 (,) (Just dir) <$> serializeNode (AxWrap parentRef ax) 
             serializeRend _ (GRend v) = (,) Nothing <$> serializeNode v
 
+instance Bokeh Plot where
+    serializeNode plt = snd <$> serializePlot plt
+
+makeBokeh :: Plot -> Value
+makeBokeh plt = let
+    (go, endState) = runState (serializePlot plt) (SerialEnv [] 0)
+    (pid, _) = go
+    topid = (pack . show . idCount) endState
+    topObj = l2o [(topid, containerObj)]
+    containerObj = l2o [
+        ("roots", rootObj),
+        ("title", String "BokeHS Application"),
+        ("version", String bokehVersion)
+        ]
+    rootObj = l2o [
+        ("references", toJSON $ nodes endState),
+        ("root_ids", toJSON pid)
+        ]
+    in topObj
+
+printVal :: Value -> IO ()
+printVal = BS.putStr . encodePretty
 
 data Color = Purple | White | Lavender deriving Show
 

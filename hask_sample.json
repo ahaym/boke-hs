@@ -1,0 +1,272 @@
+{
+    "19": {
+        "roots": {
+            "root_ids": "0",
+            "references": [
+                {
+                    "attributes": {
+                        "background_fill_color": {
+                            "value": "lavender"
+                        },
+                        "x_range": {
+                            "id": "3",
+                            "type": "Range1d"
+                        },
+                        "left": [],
+                        "y_scale": {
+                            "id": "6",
+                            "type": "LinearScale"
+                        },
+                        "y_range": {
+                            "id": "4",
+                            "type": "Range1d"
+                        },
+                        "above": [
+                            {
+                                "id": "12",
+                                "type": "LinearAxis"
+                            }
+                        ],
+                        "plot_height": 400,
+                        "x_scale": {
+                            "id": "5",
+                            "type": "LinearScale"
+                        },
+                        "right": [],
+                        "title": {
+                            "id": "1",
+                            "type": "Title"
+                        },
+                        "below": [
+                            {
+                                "id": "9",
+                                "type": "LinearAxis"
+                            }
+                        ],
+                        "renderers": [
+                            {
+                                "id": "9",
+                                "type": "LinearAxis"
+                            },
+                            {
+                                "id": "12",
+                                "type": "LinearAxis"
+                            },
+                            {
+                                "id": "18",
+                                "type": "GlyphRenderer"
+                            }
+                        ],
+                        "plot_width": 400,
+                        "toolbar": {
+                            "id": "2",
+                            "type": "Toolbar"
+                        }
+                    },
+                    "id": "0",
+                    "type": "Plot"
+                },
+                {
+                    "attributes": {
+                        "glyph": {
+                            "id": "16",
+                            "type": "Line"
+                        },
+                        "data_source": {
+                            "id": "15",
+                            "type": "ColumnDataSource"
+                        },
+                        "muted_glyph": null,
+                        "hover_glyph": null,
+                        "view": {
+                            "id": "17",
+                            "type": "CDSView"
+                        }
+                    },
+                    "id": "18",
+                    "type": "GlyphRenderer"
+                },
+                {
+                    "attributes": {
+                        "source": {
+                            "id": "15",
+                            "type": "ColumnDataSource"
+                        }
+                    },
+                    "id": "17",
+                    "type": "CDSView"
+                },
+                {
+                    "attributes": {
+                        "line_color": "lavender",
+                        "x": {
+                            "field": "x"
+                        },
+                        "y": {
+                            "field": "y"
+                        }
+                    },
+                    "id": "16",
+                    "type": "Line"
+                },
+                {
+                    "attributes": {
+                        "data": {
+                            "x": [
+                                -0.5,
+                                1.8333333333333335,
+                                4.166666666666667,
+                                6.5,
+                                8.833333333333334,
+                                11.166666666666668,
+                                13.5,
+                                15.833333333333336,
+                                18.166666666666668,
+                                20.5
+                            ],
+                            "y": [
+                                2.75,
+                                3.916666666666667,
+                                5.083333333333334,
+                                6.25,
+                                7.416666666666667,
+                                8.583333333333334,
+                                9.75,
+                                10.916666666666668,
+                                12.083333333333334,
+                                13.25
+                            ]
+                        },
+                        "selected": {
+                            "id": "13",
+                            "type": "Selection"
+                        },
+                        "selection_policy": {
+                            "id": "14",
+                            "type": "UnionRenderers"
+                        },
+                        "callback": null
+                    },
+                    "id": "15",
+                    "type": "ColumnDataSource"
+                },
+                {
+                    "attributes": {},
+                    "id": "14",
+                    "type": "UnionRenderers"
+                },
+                {
+                    "attributes": {},
+                    "id": "13",
+                    "type": "Selection"
+                },
+                {
+                    "attributes": {
+                        "plot": {
+                            "id": "0",
+                            "type": "Plot"
+                        },
+                        "ticker": {
+                            "id": "11",
+                            "type": "BasicTicker"
+                        },
+                        "formatter": {
+                            "id": "10",
+                            "type": "BasicTickFormatter"
+                        }
+                    },
+                    "id": "12",
+                    "type": "LinearAxis"
+                },
+                {
+                    "attributes": {},
+                    "id": "11",
+                    "type": "BasicTicker"
+                },
+                {
+                    "attributes": {},
+                    "id": "10",
+                    "type": "BasicTickFormatter"
+                },
+                {
+                    "attributes": {
+                        "plot": {
+                            "id": "0",
+                            "type": "Plot"
+                        },
+                        "ticker": {
+                            "id": "8",
+                            "type": "BasicTicker"
+                        },
+                        "formatter": {
+                            "id": "7",
+                            "type": "BasicTickFormatter"
+                        }
+                    },
+                    "id": "9",
+                    "type": "LinearAxis"
+                },
+                {
+                    "attributes": {},
+                    "id": "8",
+                    "type": "BasicTicker"
+                },
+                {
+                    "attributes": {},
+                    "id": "7",
+                    "type": "BasicTickFormatter"
+                },
+                {
+                    "attributes": {},
+                    "id": "6",
+                    "type": "LinearScale"
+                },
+                {
+                    "attributes": {},
+                    "id": "5",
+                    "type": "LinearScale"
+                },
+                {
+                    "attributes": {
+                        "start": -0.5,
+                        "plot": null,
+                        "end": 20
+                    },
+                    "id": "4",
+                    "type": "Range1d"
+                },
+                {
+                    "attributes": {
+                        "start": -0.5,
+                        "plot": null,
+                        "end": 20
+                    },
+                    "id": "3",
+                    "type": "Range1d"
+                },
+                {
+                    "attributes": {
+                        "active_inspect": "auto",
+                        "active_scroll": "auto",
+                        "active_tap": "auto",
+                        "active_drag": "auto"
+                    },
+                    "id": "2",
+                    "type": "Toolbar"
+                },
+                {
+                    "attributes": {
+                        "attributes": {
+                            "text": "Sample Haskell Plot",
+                            "plot": null
+                        }
+                    },
+                    "id": "1",
+                    "type": "Title"
+                }
+            ]
+        },
+        "version": "0.12.16",
+        "title": "BokeHS Application"
+    }
+}

@@ -61,11 +61,13 @@ library
   -- Other library packages from which modules are imported.
   build-depends:       base >=4.9 && <4.11,
                        aeson >= 1.3,
+                       aeson-pretty,
                        text >= 1.2,
                        scientific,
                        mtl,
                        unordered-containers >= 0.2.9.0,
-                       bytestring
+                       bytestring,
+                       hashable
 
   -- Directories containing source files.
   -- hs-source-dirs:
