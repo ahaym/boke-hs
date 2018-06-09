@@ -1,0 +1,263 @@
+[
+    {
+        "attributes": {
+            "above": [
+                {
+                    "id": "12",
+                    "type": "LinearAxis"
+                }
+            ],
+            "background_fill_color": {
+                "value": "lavender"
+            },
+            "below": [
+                {
+                    "id": "9",
+                    "type": "LinearAxis"
+                }
+            ],
+            "left": [],
+            "plot_height": 400,
+            "plot_width": 400,
+            "renderers": [
+                {
+                    "id": "9",
+                    "type": "LinearAxis"
+                },
+                {
+                    "id": "12",
+                    "type": "LinearAxis"
+                },
+                {
+                    "id": "18",
+                    "type": "GlyphRenderer"
+                }
+            ],
+            "right": [],
+            "title": {
+                "id": "1",
+                "type": "Title"
+            },
+            "toolbar": {
+                "id": "2",
+                "type": "Toolbar"
+            },
+            "x_range": {
+                "id": "3",
+                "type": "Range1d"
+            },
+            "x_scale": {
+                "id": "5",
+                "type": "LinearScale"
+            },
+            "y_range": {
+                "id": "4",
+                "type": "Range1d"
+            },
+            "y_scale": {
+                "id": "6",
+                "type": "LinearScale"
+            }
+        },
+        "id": "0",
+        "type": "Plot"
+    },
+    {
+        "attributes": {
+            "data_source": {
+                "id": "15",
+                "type": "ColumnDataSource"
+            },
+            "glyph": {
+                "id": "16",
+                "type": "Line"
+            },
+            "hover_glyph": null,
+            "muted_glyph": null,
+            "view": {
+                "id": "17",
+                "type": "CDSView"
+            }
+        },
+        "id": "18",
+        "type": "GlyphRenderer"
+    },
+    {
+        "attributes": {
+            "source": {
+                "id": "15",
+                "type": "ColumnDataSource"
+            }
+        },
+        "id": "17",
+        "type": "CDSView"
+    },
+    {
+        "attributes": {
+            "line_color": "lavender",
+            "x": {
+                "field": "x"
+            },
+            "y": {
+                "field": "y"
+            }
+        },
+        "id": "16",
+        "type": "Line"
+    },
+    {
+        "attributes": {
+            "callback": null,
+            "data": {
+                "x": [
+                    -0.5,
+                    1.8333333333333335,
+                    4.166666666666667,
+                    6.5,
+                    8.833333333333334,
+                    11.166666666666668,
+                    13.5,
+                    15.833333333333336,
+                    18.166666666666668,
+                    20.5
+                ],
+                "y": [
+                    2.75,
+                    3.916666666666667,
+                    5.083333333333334,
+                    6.25,
+                    7.416666666666667,
+                    8.583333333333334,
+                    9.75,
+                    10.916666666666668,
+                    12.083333333333334,
+                    13.25
+                ]
+            },
+            "selected": {
+                "id": "13",
+                "type": "Selection"
+            },
+            "selection_policy": {
+                "id": "14",
+                "type": "UnionRenderers"
+            }
+        },
+        "id": "15",
+        "type": "ColumnDataSource"
+    },
+    {
+        "attributes": {},
+        "id": "14",
+        "type": "UnionRenderers"
+    },
+    {
+        "attributes": {},
+        "id": "13",
+        "type": "Selection"
+    },
+    {
+        "attributes": {
+            "formatter": {
+                "id": "10",
+                "type": "BasicTickFormatter"
+            },
+            "plot": {
+                "id": "0",
+                "type": "Plot"
+            },
+            "ticker": {
+                "id": "11",
+                "type": "BasicTicker"
+            }
+        },
+        "id": "12",
+        "type": "LinearAxis"
+    },
+    {
+        "attributes": {},
+        "id": "11",
+        "type": "BasicTicker"
+    },
+    {
+        "attributes": {},
+        "id": "10",
+        "type": "BasicTickFormatter"
+    },
+    {
+        "attributes": {
+            "formatter": {
+                "id": "7",
+                "type": "BasicTickFormatter"
+            },
+            "plot": {
+                "id": "0",
+                "type": "Plot"
+            },
+            "ticker": {
+                "id": "8",
+                "type": "BasicTicker"
+            }
+        },
+        "id": "9",
+        "type": "LinearAxis"
+    },
+    {
+        "attributes": {},
+        "id": "8",
+        "type": "BasicTicker"
+    },
+    {
+        "attributes": {},
+        "id": "7",
+        "type": "BasicTickFormatter"
+    },
+    {
+        "attributes": {},
+        "id": "6",
+        "type": "LinearScale"
+    },
+    {
+        "attributes": {},
+        "id": "5",
+        "type": "LinearScale"
+    },
+    {
+        "attributes": {
+            "end": 20,
+            "plot": null,
+            "start": -0.5
+        },
+        "id": "4",
+        "type": "Range1d"
+    },
+    {
+        "attributes": {
+            "end": 20,
+            "plot": null,
+            "start": -0.5
+        },
+        "id": "3",
+        "type": "Range1d"
+    },
+    {
+        "attributes": {
+            "active_drag": "auto",
+            "active_inspect": "auto",
+            "active_scroll": "auto",
+            "active_tap": "auto"
+        },
+        "id": "2",
+        "type": "Toolbar"
+    },
+    {
+        "attributes": {
+            "attributes": {
+                "plot": null,
+                "text": "Sample Haskell Plot"
+            }
+        },
+        "id": "1",
+        "type": "Title"
+    }
+]

@@ -39,6 +39,7 @@ category:            Graphics
 
 build-type:          Simple
 
+
 -- Extra files to be distributed with the package, such as examples or a
 -- README.
 extra-source-files:  ChangeLog.md
@@ -50,6 +51,7 @@ library
   -- Modules exported by the library.
   exposed-modules: BokeHS.Models
 
+  GHC-Options:         -Wall
   -- Modules included in this library but not exported.
   -- other-modules:
 
