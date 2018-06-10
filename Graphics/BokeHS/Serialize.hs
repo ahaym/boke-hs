@@ -1,19 +1,18 @@
-{-# LANGUAGE DeriveGeneric #-}
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE FlexibleContexts #-}
 {-# LANGUAGE AutoDeriveTypeable #-}
 
-module BokeHS.Models where
+module Graphics.BokeHS.Serialize where
 
 import Data.Text (pack, Text)
-import Data.Scientific
-import GHC.Generics
 import GHC.Exts (fromList)
 import Control.Monad.State
 import Data.Aeson
 import qualified Data.HashMap.Lazy as HML
 import qualified Data.ByteString.Lazy as BS
+import qualified Data.ByteString.Lazy.Char8 as CS
 import Data.Aeson.Encode.Pretty (encodePretty)
+import Graphics.BokeHS.Models
 
 bokehVersion :: Text
 bokehVersion = "0.12.16"
@@ -23,17 +22,6 @@ mergeAeson = Object . HML.unions . map (\(Object o) -> o)
 
 l2o :: [(Text, Value)] -> Value
 l2o = Object . fromList
-
---encodes a BokehJS Ref ID
-newtype BID = BID Text deriving (Eq, Show, Generic)
-instance ToJSON BID
-
---encodes a BokehJS Type Declaration
-newtype BType = BType Text deriving (Eq, Show, Generic)
-instance ToJSON BType
-
-newtype BNode = BNode Value deriving (Show, Generic)
-instance ToJSON BNode 
 
 --holds serialization state
 data SerialEnv = SerialEnv {
@@ -54,15 +42,7 @@ class Bokeh a where
     serializeNode o = return $ makePrim o
     {-# MINIMAL makePrim | serializeNode #-}
 
-newtype Placeholder = Placeholder Value deriving (Show, Generic, Eq)
-instance ToJSON Placeholder
 
-instance Bokeh Placeholder where
-    makePrim (Placeholder v)= v
-
-instance (Bokeh a) => Bokeh (Maybe a) where
-    serializeNode Nothing = return Null
-    serializeNode (Just o) = serializeNode o
 
 --Helper function for getting new BIDs
 newBID :: State SerialEnv BID
@@ -89,23 +69,112 @@ makeRef btype attrs = do
         node = (BNode . mergeAeson) [footer, attrObj]
     addNode node
     return footer
+instance Bokeh Plot where
+    serializeNode plt = snd <$> serializePlot plt
 
-data Plot = Plot {
-    backgroundFill :: Color,
-    width :: Scientific,
-    height :: Scientific,
-    renderers :: [Renderer],
-    title :: Title,
-    toolbar :: Toolbar,
-    xRange :: Range,
-    yRange :: Range,
-    xScale :: Scale,
-    yScale :: Scale
-    } deriving Show
+
+
+instance Bokeh Placeholder where
+    makePrim (Placeholder v)= v
+
+instance (Bokeh a) => Bokeh (Maybe a) where
+    serializeNode Nothing = return Null
+    serializeNode (Just o) = serializeNode o
+
+instance Bokeh Color where
+    makePrim color = toJSON colorString
+        where
+            colorString :: Text
+            colorString = case color of
+                Purple -> "purple"
+                White -> "white"
+                Lavender -> "lavender"
+
+instance Bokeh Title where
+    serializeNode (Title titletext) = makeRef (BType "Title") titleObj
+            where
+                 titleObj = [
+                        ("plot", Null), 
+                        ("text", String titletext)
+                    ]
+data AxisWrapper = AxWrap Value Axis
+
+instance Bokeh AxisWrapper where
+    --TODO: Validate Parent Value
+    serializeNode  (AxWrap parentRef (LinearAxis form tick)) = do
+        formatter_ <- serializeNode form 
+        ticker_ <- serializeNode tick
+        let axisObj = [("formatter", formatter_), ("plot", parentRef), ("ticker", ticker_)]
+        makeRef (BType "LinearAxis") axisObj
+
+instance Bokeh DataSource where
+    serializeNode cds = do
+        selected_ <- serializeNode (selected cds)
+        selectionPolicy_ <- serializeNode (selectionPolicy cds)
+        let cdsObj = [("callback", Null), ("data", dataObj), 
+                ("selected", selected_), ("selection_policy", selectionPolicy_)]
+        makeRef (BType "ColumnDataSource") cdsObj
+        where toObj (Field ftext, nums) = (ftext, toJSON nums)
+              dataObj = (Object . fromList) $ toObj <$> cols cds
+
+instance Bokeh GlyphRenderer where
+    serializeNode gr = do
+        hover_glyph_ <- serializeNode (hoverGlyph gr)
+        muted_glyph_ <- serializeNode (mutedGlyph gr)
+        data_source_ <- serializeNode (dataSource gr)
+        glyph_ <- serializeNode (glyph gr)
+        view_ <- serializeNode (VWrap data_source_ (vie gr))
+        let grObj = [("hover_glyph", hover_glyph_), ("muted_glyph", muted_glyph_),
+                ("data_source", data_source_), ("glyph", glyph_), ("view", view_)]
+        makeRef (BType "GlyphRenderer") grObj
+
+instance Bokeh ViewWrapper where
+    serializeNode (VWrap cdsRef CDSView) = makeRef (BType "CDSView") viewObj
+        where viewObj = [("source", cdsRef)]
+    serializeNode _ = undefined
+
+instance Bokeh Scale where
+    serializeNode LinearScale = makeRef (BType "LinearScale") []
+
+instance Bokeh Ticker where
+    serializeNode BasicTicker = makeRef (BType "BasicTicker") []
+
+instance Bokeh Formatter where
+    serializeNode BasicTickFormatter = makeRef (BType "BasicTickFormatter") []
+
+instance Bokeh Range where
+    serializeNode range = makeRef (BType "Range1d") 
+        [("callback", Null), ("start", toJSON (start range)), ("end", toJSON (end range))]
+
+instance Bokeh SelectionPolicy where
+    serializeNode UnionRenderers = makeRef (BType "UnionRenderers") []
+    serializeNode _ = undefined
+
+instance Bokeh Selection where
+    serializeNode Selection = makeRef (BType "Selection") []
+    serializeNode _ = undefined
+
+instance Bokeh Glyph where
+    serializeNode (Line color x y) = makeRef (BType "Line") [("line_color", makePrim color), 
+        ("x", l2o [("field", toJSON x)]),("y", l2o [("field", toJSON y)])]
+
+instance (Bokeh a) => Bokeh (Auto a) where
+    serializeNode Auto = return $ String "auto"
+    serializeNode (NotAuto o) = serializeNode o
+
+instance Bokeh Toolbar where
+    serializeNode bar = do
+        active_drag_ <- serializeNode (activeDrag bar)
+        active_inspect_ <- serializeNode (activeInspect bar)
+        active_scroll_ <- serializeNode (activeScroll bar)
+        active_tap_ <- serializeNode (activeTap bar)
+        let barObj = [("active_drag", active_drag_), ("active_scroll", active_scroll_),
+                ("active_inspect", active_inspect_), ("active_tap", active_tap_)]
+        makeRef (BType "Toolbar") barObj
 
 serializePlot :: Plot -> State SerialEnv (BID, Value)
 serializePlot plt@Plot{height = plot_height, width = plot_width} = do
-        curID <- newBID
+        let curID = BID "plot_id"
         let footer = l2o [(pack "id", toJSON curID), (pack "type", toJSON $ BType"Plot")]
         background_fill_ <- serializeNode (backgroundFill plt)
         title_ <- serializeNode (title plt)
@@ -148,15 +217,11 @@ serializePlot plt@Plot{height = plot_height, width = plot_width} = do
                 (,) (Just dir) <$> serializeNode (AxWrap parentRef ax) 
             serializeRend _ (GRend v) = (,) Nothing <$> serializeNode v
 
-instance Bokeh Plot where
-    serializeNode plt = snd <$> serializePlot plt
-
 makeBokeh :: Plot -> Value
 makeBokeh plt = let
     (go, endState) = runState (serializePlot plt) (SerialEnv [] 0)
     (pid, _) = go
-    topid = (pack . show . idCount) endState
-    topObj = l2o [(topid, containerObj)]
+    topObj = l2o [("top_obj", containerObj)]
     containerObj = l2o [
         ("roots", rootObj),
         ("title", String "BokeHS Application"),
@@ -164,168 +229,12 @@ makeBokeh plt = let
         ]
     rootObj = l2o [
         ("references", toJSON $ nodes endState),
-        ("root_ids", toJSON pid)
+        ("root_ids", toJSON [pid])
         ]
     in topObj
 
 printVal :: Value -> IO ()
 printVal = BS.putStr . encodePretty
-
-data Color = Purple | White | Lavender deriving Show
-
-instance Bokeh Color where
-    makePrim color = toJSON colorString
-        where
-            colorString :: Text
-            colorString = case color of
-                Purple -> "purple"
-                White -> "white"
-                Lavender -> "lavender"
-
-newtype Title = Title Text deriving Show
-instance Bokeh Title where
-    serializeNode (Title titletext) = makeRef (BType "Title") titleObj
-            where
-                 titleObj = [
-                    ("attributes", Object $ fromList [
-                        ("plot", Null), ("text", String titletext)])
-                    ]
-data Direction = BLeft | BRight | BAbove | BBelow | BCenter deriving (Eq, Show)
-
-data Renderer = ARend Direction Axis | GRend GlyphRenderer deriving Show
-
-newtype Field = Field Text deriving (Show, Generic)
-instance ToJSON Field
-
-data Axis = LinearAxis {
-        formatter :: Formatter,
-        ticker :: Ticker
-    } deriving Show
-
-data AxisWrapper = AxWrap Value Axis
-
-instance Bokeh AxisWrapper where
-    --TODO: Validate Parent Value
-    serializeNode  (AxWrap parentRef (LinearAxis form tick)) = do
-        formatter_ <- serializeNode form 
-        ticker_ <- serializeNode tick
-        let axisObj = [("formatter", formatter_), ("plot", parentRef), ("ticker", ticker_)]
-        makeRef (BType "LinearAxis") axisObj
-
-data DataSource = CDS {
-        cols :: [(Field, [Scientific])],
-        selected :: Selection,
-        selectionPolicy :: SelectionPolicy
-    } deriving Show
-
-instance Bokeh DataSource where
-    serializeNode cds = do
-        selected_ <- serializeNode (selected cds)
-        selectionPolicy_ <- serializeNode (selectionPolicy cds)
-        let cdsObj = [("callback", Null), ("data", dataObj), 
-                ("selected", selected_), ("selection_policy", selectionPolicy_)]
-        makeRef (BType "ColumnDataSource") cdsObj
-        where toObj (Field ftext, nums) = (ftext, toJSON nums)
-              dataObj = (Object . fromList) $ toObj <$> cols cds
-
-data GlyphRenderer = GlyphRenderer {
-        hoverGlyph :: Maybe Placeholder,
-        mutedGlyph :: Maybe Placeholder,
-        dataSource :: DataSource,
-        glyph :: Glyph,
-        vie :: View
-    } deriving Show
-
-instance Bokeh GlyphRenderer where
-    serializeNode gr = do
-        hover_glyph_ <- serializeNode (hoverGlyph gr)
-        muted_glyph_ <- serializeNode (mutedGlyph gr)
-        data_source_ <- serializeNode (dataSource gr)
-        glyph_ <- serializeNode (glyph gr)
-        view_ <- serializeNode (VWrap data_source_ (vie gr))
-        let grObj = [("hover_glyph", hover_glyph_), ("muted_glyph", muted_glyph_),
-                ("data_source", data_source_), ("glyph", glyph_), ("view", view_)]
-        makeRef (BType "GlyphRenderer") grObj
-
-data View = CDSView | Views_ deriving Show
-data ViewWrapper = VWrap Value View
-
-instance Bokeh ViewWrapper where
-    serializeNode (VWrap cdsRef CDSView) = makeRef (BType "CDSView") viewObj
-        where viewObj = [("source", cdsRef)]
-    serializeNode _ = undefined
-
-data Scale = LinearScale deriving Show
-
-instance Bokeh Scale where
-    serializeNode LinearScale = makeRef (BType "LinearScale") []
-
-data Ticker = BasicTicker deriving Show
- 
-instance Bokeh Ticker where
-    serializeNode BasicTicker = makeRef (BType "BasicTicker") []
-
-
-data Formatter = BasicTickFormatter deriving Show
-
-instance Bokeh Formatter where
-    serializeNode BasicTickFormatter = makeRef (BType "BasicTickFormatter") []
-
-data Range = Range1d {
-        start :: Scientific,
-        end :: Scientific
-    } deriving Show
-
-instance Bokeh Range where
-    serializeNode range = makeRef (BType "Range1d") 
-        [("plot", Null), ("start", toJSON (start range)), ("end", toJSON (end range))]
-
-data SelectionPolicy = UnionRenderers | Policies_ deriving Show
-
-instance Bokeh SelectionPolicy where
-    serializeNode UnionRenderers = makeRef (BType "UnionRenderers") []
-    serializeNode _ = undefined
-
-data Selection = Selection | Sels_ deriving Show
-
-instance Bokeh Selection where
-    serializeNode Selection = makeRef (BType "Selection") []
-    serializeNode _ = undefined
-
-data Glyph = Line {
-        lineColor :: Color,
-        xfield :: Field,
-        yfield :: Field
-    } deriving Show
-
-instance Bokeh Glyph where
-    serializeNode (Line color x y) = makeRef (BType "Line") [("line_color", makePrim color), 
-        ("x", l2o [("field", toJSON x)]),("y", l2o [("field", toJSON y)])]
-
-data Auto a = Auto | NotAuto a deriving Show
-instance (Bokeh a) => Bokeh (Auto a) where
-    serializeNode Auto = return $ String "auto"
-    serializeNode (NotAuto o) = serializeNode o
-
---active_drag, active_inspect, active_scroll, active_tap 
-data Toolbar = Toolbar {    
-        activeDrag :: Auto Placeholder,
-        activeInspect :: Auto Placeholder,
-        activeScroll :: Auto Placeholder,
-        activeTap :: Auto Placeholder
-    }
-    deriving Show
-
---CUR
-instance Bokeh Toolbar where
-    serializeNode bar = do
-        active_drag_ <- serializeNode (activeDrag bar)
-        active_inspect_ <- serializeNode (activeInspect bar)
-        active_scroll_ <- serializeNode (activeScroll bar)
-        active_tap_ <- serializeNode (activeTap bar)
-        let barObj = [("active_drag", active_drag_), ("active_scroll", active_scroll_),
-                ("active_inspect", active_inspect_), ("active_tap", active_tap_)]
-        makeRef (BType "Toolbar") barObj
 
 defaultToolbar :: Toolbar
 defaultToolbar = Toolbar Auto Auto Auto Auto
@@ -356,8 +265,8 @@ samplesrc = CDS {
                      12.083333333333334,
                      13.25] 
 
-examplePlot :: Plot
-examplePlot = Plot{
+defaultPlot :: Plot
+defaultPlot = Plot{
        backgroundFill = Lavender,
        width = 400,
        height = 400,
@@ -370,8 +279,15 @@ examplePlot = Plot{
        yScale = LinearScale
     } where
         xaxis = ARend BBelow ax
-        yaxis = ARend BAbove ax
+        yaxis = ARend BLeft ax
         ax = LinearAxis{formatter=BasicTickFormatter, ticker=BasicTicker}
         lrend = GRend GlyphRenderer { hoverGlyph = Nothing, mutedGlyph = Nothing,
         dataSource = samplesrc, glyph = lin, vie = CDSView}
-        lin = Line Lavender (Field "x") (Field "y")
+        lin = Line Purple (Field "x") (Field "y")
+
+--very messy, replace with a templating engine
+emitPlotHTML :: Plot -> IO BS.ByteString
+emitPlotHTML plot = do
+    template <- BS.readFile "templates/bokeh.tpl"
+    let [bef, aft] = CS.split '$' template
+    return $ bef `mappend` (encode . makeBokeh) plot `mappend` aft
