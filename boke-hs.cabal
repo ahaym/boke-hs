@@ -2,7 +2,7 @@
 -- documentation, see http://haskell.org/cabal/users-guide/
 
 -- The name of the package.
-name:                boke-hs
+name:                bokehask
 
 -- The package version.  See the Haskell package versioning policy (PVP)
 -- for standards guiding when and how versions should be incremented.
@@ -44,6 +44,8 @@ build-type:          Simple
 -- README.
 extra-source-files:  ChangeLog.md
 
+data-files:                     templates/bokeh.tpl
+
 -- Constraint on the version of Cabal needed to build this package.
 cabal-version:       >=1.10.0
 
@@ -54,7 +56,7 @@ library
 
   GHC-Options:         -Wall
   -- Modules included in this library but not exported.
-  -- other-modules:
+  other-modules: Paths_bokehask
 
   -- LANGUAGE extensions used by modules in this package.
   -- other-extensions:

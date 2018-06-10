@@ -13,6 +13,7 @@ import qualified Data.ByteString.Lazy as BS
 import qualified Data.ByteString.Lazy.Char8 as CS
 import Data.Aeson.Encode.Pretty (encodePretty)
 import Graphics.BokeHS.Models
+import Paths_bokehask
 
 bokehVersion :: Text
 bokehVersion = "0.12.16"
@@ -236,6 +237,14 @@ makeBokeh plt = let
 printVal :: Value -> IO ()
 printVal = BS.putStr . encodePretty
 
+--very messy, replace with a templating engine
+emitPlotHTML :: Plot -> IO BS.ByteString
+emitPlotHTML plot = do
+    file <- getDataFileName "templates/bokeh.tpl"
+    template <- BS.readFile file
+    let [bef, aft] = CS.split '$' template
+    return $ bef `mappend` (encode . makeBokeh) plot `mappend` aft
+
 defaultToolbar :: Toolbar
 defaultToolbar = Toolbar Auto Auto Auto Auto
 
@@ -285,9 +294,3 @@ defaultPlot = Plot{
         dataSource = samplesrc, glyph = lin, vie = CDSView}
         lin = Line Purple (Field "x") (Field "y")
 
---very messy, replace with a templating engine
-emitPlotHTML :: Plot -> IO BS.ByteString
-emitPlotHTML plot = do
-    template <- BS.readFile "templates/bokeh.tpl"
-    let [bef, aft] = CS.split '$' template
-    return $ bef `mappend` (encode . makeBokeh) plot `mappend` aft
