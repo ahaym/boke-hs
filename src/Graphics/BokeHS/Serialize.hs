@@ -43,15 +43,13 @@ class Bokeh a where
     serializeNode o = return $ makePrim o
     {-# MINIMAL makePrim | serializeNode #-}
 
-
-
 -- | Helper function for getting new BIDs
 newBID :: State SerialEnv BID
 newBID = do
     env <- get
-    let curID = idCount env
-    put env{idCount = curID + 1}
-    return $ (BID . pack . show) curID -- FIXME? this doesn' return the updated ID 
+    let newID = succ $ idCount env
+    put env{idCount = newID}
+    return $ (BID . pack . show) newID
 
 -- | Helper function for adding nodes to the node list
 addNode :: BNode -> State SerialEnv ()
@@ -60,7 +58,7 @@ addNode newVal = do
     let vals = nodes env
     put env{nodes=newVal : vals}
 
--- | helper function for conveniently turning a list of attributes into a seralizing function
+-- | helper function for conveniently turning a list of attributes into a serializing function
 type Attributes = [(Text, Value)]
 makeRef :: BType -> Attributes -> State SerialEnv Value
 makeRef btype attrs = do
@@ -70,10 +68,9 @@ makeRef btype attrs = do
         node = (BNode . mergeAeson) [footer, attrObj]
     addNode node
     return footer
+
 instance Bokeh Plot where
     serializeNode plt = snd <$> serializePlot plt
-
-
 
 instance Bokeh Placeholder where
     makePrim (Placeholder v)= v
@@ -82,6 +79,16 @@ instance (Bokeh a) => Bokeh (Maybe a) where
   serializeNode m = case m of
     Nothing -> pure Null
     Just o -> serializeNode o
+
+instance (Bokeh l, Bokeh r) => Bokeh (Either l r) where
+    serializeNode v = case v of
+        Left a -> serializeNode a
+        Right b -> serializeNode b
+
+instance (Bokeh a) => Bokeh (Auto a) where
+  serializeNode aa = case aa of
+    Auto -> pure $ String "auto"
+    NotAuto o -> serializeNode o
 
 instance Bokeh Color where
     makePrim color = toJSON colorString
@@ -159,11 +166,6 @@ instance Bokeh Selection where
 instance Bokeh Glyph where
     serializeNode (Line color x y) = makeRef (BType "Line") [("line_color", makePrim color), 
         ("x", l2o [("field", toJSON x)]),("y", l2o [("field", toJSON y)])]
-
-instance (Bokeh a) => Bokeh (Auto a) where
-  serializeNode aa = case aa of
-    Auto -> pure $ String "auto"
-    NotAuto o -> serializeNode o
 
 instance Bokeh Toolbar where
     serializeNode bar = do
