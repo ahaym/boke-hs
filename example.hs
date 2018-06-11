@@ -38,7 +38,7 @@ myPlot = Plot{
        width = 1000,
        height = 1000,
        renderers = [xaxis, yaxis, lrend],
-       title = Title "Sample Haskell Plot",
+       title = Title "Sample bokeh-hs plot",
        toolbar = defaultToolbar,
        xRange = Range1d (-0.5) 20,
        yRange = Range1d (-0.5) 20,
@@ -56,4 +56,5 @@ main :: IO ()
 main = do
     plotHTML <- emitPlotHTML myPlot
     BS.writeFile "sample.html" plotHTML
-    void $ system "icecat --new-window sample.html"
+    void $ system "firefox --new-window sample.html"    
+    -- void $ system "icecat --new-window sample.html"
