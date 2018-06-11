@@ -30,37 +30,37 @@ data SerialEnv = SerialEnv {
         idCount :: Int --current BID generation state 
     } deriving Show
 
-{- Class for types that can be serialized to BokehJS.
- - Can either be a primitive type whose value can be directly inserted (makePrim).
- - Or a ref, trivially constructed from the typename, is inserted in place of the
- - value, and the value itself is added to the node list of the BokehJS graph.
- -}
+-- | Class for types that can be serialized to BokehJS.
+-- Can either be a primitive type whose value can be directly inserted (makePrim).
+-- Or a ref, trivially constructed from the typename, is inserted in place of the
+-- value, and the value itself is added to the node list of the BokehJS graph.
 
 class Bokeh a where
     makePrim :: a -> Value
-    serializeNode :: a -> State SerialEnv Value
     makePrim _ = Null
+    
+    serializeNode :: a -> State SerialEnv Value    
     serializeNode o = return $ makePrim o
     {-# MINIMAL makePrim | serializeNode #-}
 
 
 
---Helper function for getting new BIDs
+-- | Helper function for getting new BIDs
 newBID :: State SerialEnv BID
 newBID = do
     env <- get
     let curID = idCount env
     put env{idCount = curID + 1}
-    return $ (BID . pack . show) curID
+    return $ (BID . pack . show) curID -- FIXME? this doesn' return the updated ID 
 
---Helper function for adding nodes to the node list
+-- | Helper function for adding nodes to the node list
 addNode :: BNode -> State SerialEnv ()
 addNode newVal = do
     env <- get
     let vals = nodes env
     put env{nodes=newVal : vals}
 
---helper function for conveniently turning a list of attributes into a seralizing function
+-- | helper function for conveniently turning a list of attributes into a seralizing function
 type Attributes = [(Text, Value)]
 makeRef :: BType -> Attributes -> State SerialEnv Value
 makeRef btype attrs = do
@@ -79,8 +79,9 @@ instance Bokeh Placeholder where
     makePrim (Placeholder v)= v
 
 instance (Bokeh a) => Bokeh (Maybe a) where
-    serializeNode Nothing = return Null
-    serializeNode (Just o) = serializeNode o
+  serializeNode m = case m of
+    Nothing -> pure Null
+    Just o -> serializeNode o
 
 instance Bokeh Color where
     makePrim color = toJSON colorString
@@ -132,7 +133,7 @@ instance Bokeh GlyphRenderer where
 instance Bokeh ViewWrapper where
     serializeNode (VWrap cdsRef CDSView) = makeRef (BType "CDSView") viewObj
         where viewObj = [("source", cdsRef)]
-    serializeNode _ = undefined
+    serializeNode _ = undefined  -- FIXME
 
 instance Bokeh Scale where
     serializeNode LinearScale = makeRef (BType "LinearScale") []
@@ -149,19 +150,20 @@ instance Bokeh Range where
 
 instance Bokeh SelectionPolicy where
     serializeNode UnionRenderers = makeRef (BType "UnionRenderers") []
-    serializeNode _ = undefined
+    serializeNode _ = undefined -- FIXME
 
 instance Bokeh Selection where
     serializeNode Selection = makeRef (BType "Selection") []
-    serializeNode _ = undefined
+    serializeNode _ = undefined -- FIXME
 
 instance Bokeh Glyph where
     serializeNode (Line color x y) = makeRef (BType "Line") [("line_color", makePrim color), 
         ("x", l2o [("field", toJSON x)]),("y", l2o [("field", toJSON y)])]
 
 instance (Bokeh a) => Bokeh (Auto a) where
-    serializeNode Auto = return $ String "auto"
-    serializeNode (NotAuto o) = serializeNode o
+  serializeNode aa = case aa of
+    Auto -> pure $ String "auto"
+    NotAuto o -> serializeNode o
 
 instance Bokeh Toolbar where
     serializeNode bar = do
@@ -280,7 +282,7 @@ defaultPlot = Plot{
        width = 400,
        height = 400,
        renderers = [xaxis, yaxis, lrend],
-       title = Title "Sample Haskell Plot",
+       title = Title "Sample bokeh-hs plot",
        toolbar = defaultToolbar,
        xRange = Range1d (-0.5) 20,
        yRange = Range1d (-0.5) 20,
