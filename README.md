@@ -1,4 +1,4 @@
-Experimental EDSL for generating Bokeh Graphs in Haskell. Project for Zurihac 2018
+Experimental bindings for generating Bokeh Graphs in Haskell. Project originally for Zurihac 2018
 
 ## Roadmap
 

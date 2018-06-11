@@ -9,6 +9,12 @@ import Data.Scientific
 import GHC.Generics
 import Data.Aeson
 
+import qualified Data.Colour as C
+import qualified Data.Colour.Names as C
+import qualified Data.Colour.SRGB as C
+
+
+
 --encodes a BokehJS Ref ID
 newtype BID = BID Text deriving (Eq, Show, Generic)
 instance ToJSON BID
@@ -36,7 +42,7 @@ data Plot = Plot {
     yScale :: Scale
     } deriving Show
 
-data Color = Purple | White | Lavender deriving Show
+data Color = Purple | White | Lavender deriving Show  -- FIXME use `colour` instead
 
 newtype Title = Title Text deriving Show
 
@@ -48,25 +54,24 @@ newtype Field = Field Text deriving (Show, Generic)
 instance ToJSON Field
 
 data Axis = LinearAxis {
-        formatter :: Formatter,
-        ticker :: Ticker
-    } deriving Show
+  formatter :: Formatter
+  , ticker :: Ticker
+  } deriving Show
 
 
 data DataSource = CDS {
-        cols :: [(Field, [Scientific])],
-        selected :: Selection,
-        selectionPolicy :: SelectionPolicy
-    } deriving Show
+  cols :: [(Field, [Scientific])]  -- FIXME use `Frames` instead
+  , selected :: Selection
+  , selectionPolicy :: SelectionPolicy
+  } deriving Show
 
 
 data GlyphRenderer = GlyphRenderer {
-        hoverGlyph :: Maybe Placeholder,
-        mutedGlyph :: Maybe Placeholder,
-        dataSource :: DataSource,
-        glyph :: Glyph,
-        vie :: View
-    } deriving Show
+  hoverGlyph :: Maybe Placeholder
+  , mutedGlyph :: Maybe Placeholder
+  , dataSource :: DataSource
+  , glyph :: Glyph
+  , vie :: View } deriving Show
 
 data View = CDSView | Views_ deriving Show
 data ViewWrapper = VWrap Value View
@@ -79,26 +84,22 @@ data Formatter = BasicTickFormatter deriving Show
 
 data Range = Range1d {
         start :: Scientific,
-        end :: Scientific
-    } deriving Show
+        end :: Scientific } deriving Show
 
 data SelectionPolicy = UnionRenderers | Policies_ deriving Show
 
 data Selection = Selection | Sels_ deriving Show
 
 data Glyph = Line {
-        lineColor :: Color,
-        xfield :: Field,
-        yfield :: Field
-    } deriving Show
+        lineColor :: Color
+        , xfield :: Field
+        , yfield :: Field } deriving Show
 
 data Auto a = Auto | NotAuto a deriving Show
 
 --active_drag, active_inspect, active_scroll, active_tap 
 data Toolbar = Toolbar {    
-        activeDrag :: Auto Placeholder,
-        activeInspect :: Auto Placeholder,
-        activeScroll :: Auto Placeholder,
-        activeTap :: Auto Placeholder
-    }
-    deriving Show
+        activeDrag :: Auto Placeholder
+        , activeInspect :: Auto Placeholder
+        , activeScroll :: Auto Placeholder
+        , activeTap :: Auto Placeholder } deriving Show
