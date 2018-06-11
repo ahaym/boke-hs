@@ -1,6 +1,6 @@
 Experimental EDSL for generating Bokeh Graphs in Haskell. Project for Zurihac 2018
 
-##Roadmap
+## Roadmap
 
  1. *Safe* helper functions for inserting lines, possibly monoidal
 
