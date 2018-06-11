@@ -1,6 +1,6 @@
 {-# LANGUAGE OverloadedStrings #-}
 import Graphics.BokeHS.Models
-import Graphics.BokeHS.Serialize
+import Graphics.BokeHS.Serialize (emitPlotHTML, defaultToolbar)
 import Data.ByteString.Lazy as BS
 import Control.Monad
 import System.Process
@@ -35,8 +35,8 @@ myData = CDS {
 myPlot :: Plot
 myPlot = Plot{
        backgroundFill = Lavender,
-       width = 400,
-       height = 400,
+       width = 1000,
+       height = 1000,
        renderers = [xaxis, yaxis, lrend],
        title = Title "Sample Haskell Plot",
        toolbar = defaultToolbar,
