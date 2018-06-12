@@ -37,6 +37,7 @@ cabal-version:       >=1.10.0
 library
   exposed-modules: Graphics.BokeHS.Serialize
                    Graphics.BokeHS.Models
+                   Graphics.BokeHS.List
   GHC-Options:         -Wall
   other-modules: Paths_bokeHS
 
