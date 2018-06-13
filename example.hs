@@ -1,6 +1,6 @@
 {-# LANGUAGE OverloadedStrings #-}
 import Graphics.BokeHS.Models
-import Graphics.BokeHS.List
+import Graphics.BokeHS.Helpers
 import Graphics.BokeHS.Serialize (emitPlotHTML, defaultToolbar)
 import Data.ByteString.Lazy as BS
 import Control.Monad
@@ -78,7 +78,7 @@ myPlot = Plot{
         lin = Line Purple (Field "x") (Field "y")
 
 myPlot2 :: Plot
-myPlot2 = addLine myPlot myData2 Purple
+myPlot2 = addLine myPlot myData2 fst snd Purple
 
 main :: IO ()
 main = do
