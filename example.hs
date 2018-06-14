@@ -5,6 +5,7 @@ import Graphics.BokeHS.Serialize (emitPlotHTML, defaultToolbar)
 import Data.ByteString.Lazy as BS
 import Control.Monad
 import System.Process
+import Data.Colour.Names
 
 myData :: DataSource
 myData = CDS {
@@ -59,7 +60,7 @@ myData2 = Prelude.zip xcols ycols
 
 myPlot :: Plot
 myPlot = Plot{
-       backgroundFill = Lavender,
+       backgroundFill = white,
        width = 1000,
        height = 1000,
        renderers = [xaxis, yaxis, lrend],
@@ -75,10 +76,10 @@ myPlot = Plot{
         ax = LinearAxis{formatter=BasicTickFormatter, ticker=BasicTicker}
         lrend = GRend GlyphRenderer { hoverGlyph = Nothing, mutedGlyph = Nothing,
         dataSource = myData, glyph = lin, vie = CDSView}
-        lin = Line Purple (Field "x") (Field "y")
+        lin = Line green (Field "x") (Field "y")
 
 myPlot2 :: Plot
-myPlot2 = addLine myPlot myData2 fst snd Purple
+myPlot2 = addLine myPlot myData2 fst snd red
 
 main :: IO ()
 main = do

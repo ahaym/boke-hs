@@ -1,5 +1,6 @@
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE FlexibleContexts #-}
+{-# LANGUAGE FlexibleInstances #-}
 {-# LANGUAGE AutoDeriveTypeable #-}
 
 module Graphics.BokeHS.Serialize where
@@ -8,6 +9,8 @@ import Data.Text (pack, Text)
 import GHC.Exts (fromList)
 import Control.Monad.State
 import Data.Aeson
+import qualified Data.Colour.SRGB as C
+import Data.Colour.Names
 import qualified Data.HashMap.Lazy as HML
 import qualified Data.ByteString.Lazy as BS
 import qualified Data.ByteString.Lazy.Char8 as CS
@@ -90,14 +93,9 @@ instance (Bokeh a) => Bokeh (Auto a) where
     Auto -> pure $ String "auto"
     NotAuto o -> serializeNode o
 
-instance Bokeh Color where
-    makePrim color = toJSON colorString
-        where
-            colorString :: Text
-            colorString = case color of
-                Purple -> "purple"
-                White -> "white"
-                Lavender -> "lavender"
+--is equal to Models.Color
+instance Bokeh (C.Colour Double) where
+    makePrim = toJSON .  C.sRGB24show
 
 instance Bokeh Title where
     serializeNode (Title titletext) = makeRef (BType "Title") titleObj
@@ -280,11 +278,11 @@ samplesrc = CDS {
 
 defaultPlot :: Plot
 defaultPlot = Plot{
-       backgroundFill = Lavender,
+       backgroundFill = white,
        width = 400,
        height = 400,
        renderers = [xaxis, yaxis, lrend],
-       title = Title "Sample bokeh-hs plot",
+       title = Title "Sample bokeHS plot",
        toolbar = defaultToolbar,
        xRange = Range1d (-0.5) 20,
        yRange = Range1d (-0.5) 20,
@@ -296,5 +294,5 @@ defaultPlot = Plot{
         ax = LinearAxis{formatter=BasicTickFormatter, ticker=BasicTicker}
         lrend = GRend GlyphRenderer { hoverGlyph = Nothing, mutedGlyph = Nothing,
         dataSource = samplesrc, glyph = lin, vie = CDSView}
-        lin = Line Purple (Field "x") (Field "y")
+        lin = Line purple (Field "x") (Field "y")
 

@@ -10,7 +10,7 @@ import GHC.Generics
 import Data.Aeson
 
 import qualified Data.Colour as C
-import qualified Data.Colour.Names as C
+import Data.Colour.Names
 import qualified Data.Colour.SRGB as C
 
 
@@ -42,7 +42,7 @@ data Plot = Plot {
     yScale :: Scale
     } deriving Show
 
-data Color = Purple | White | Lavender deriving Show  -- FIXME use `colour` instead
+type Color = C.Colour Double 
 
 newtype Title = Title Text deriving Show
 
