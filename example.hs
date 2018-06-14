@@ -5,7 +5,6 @@ import Graphics.BokeHS.Serialize (emitPlotHTML, defaultToolbar)
 import Data.ByteString.Lazy as BS
 import Control.Monad
 import System.Process
-import Data.Colour.Names
 
 myData :: DataSource
 myData = CDS {

@@ -1,12 +1,14 @@
 {-# LANGUAGE OverloadedStrings #-}
 
 module Graphics.BokeHS.Helpers(
-    addLine
+    addLine,
+    module Data.Colour.Names
     ) where
 
 import Graphics.BokeHS.Models
 import Data.Scientific
 import Data.Foldable
+import Data.Colour.Names
 
 --sample glyph adder function
 addLine :: Foldable t => Plot -> t r -> (r -> Scientific) -> (r -> Scientific) -> Color -> Plot
