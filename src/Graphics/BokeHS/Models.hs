@@ -1,19 +1,17 @@
 {-# LANGUAGE DeriveGeneric #-}
 {-# LANGUAGE FlexibleContexts #-}
 {-# LANGUAGE AutoDeriveTypeable #-}
+{-# LANGUAGE GeneralizedNewtypeDeriving #-}
 
 module Graphics.BokeHS.Models where
 
-import Data.Text(Text)
+import Data.Text (Text)
 import Data.Scientific
 import GHC.Generics
 import Data.Aeson
+import Data.String (IsString)
 
 import qualified Data.Colour as C
-import Data.Colour.Names
-import qualified Data.Colour.SRGB as C
-
-
 
 --encodes a BokehJS Ref ID
 newtype BID = BID Text deriving (Eq, Show, Generic)
@@ -31,8 +29,8 @@ instance ToJSON Placeholder
 
 data Plot = Plot {
     backgroundFill :: Color,
-    width :: Scientific,
-    height :: Scientific,
+    width :: BNum,
+    height :: BNum,
     renderers :: [Renderer],
     title :: Title,
     toolbar :: Toolbar,
@@ -44,7 +42,12 @@ data Plot = Plot {
 
 type Color = C.Colour Double 
 
-newtype Title = Title Text deriving Show
+type BNum = Scientific
+
+--Represents a floating-point angle in degrees
+newtype Angle = Angle BNum deriving (Show, Generic, Eq, Num)
+
+newtype Title = Title Text deriving (Show, IsString)
 
 data Direction = BLeft | BRight | BAbove | BBelow | BCenter deriving (Eq, Show)
 
@@ -60,7 +63,7 @@ data Axis = LinearAxis {
 
 
 data DataSource = CDS {
-  cols :: [(Field, [Scientific])]  -- FIXME use `Frames` instead
+  cols :: [(Field, [BNum])]  -- FIXME use `Frames` instead
   , selected :: Selection
   , selectionPolicy :: SelectionPolicy
   } deriving Show
@@ -83,8 +86,8 @@ data Ticker = BasicTicker deriving Show
 data Formatter = BasicTickFormatter deriving Show
 
 data Range = Range1d {
-        start :: Scientific,
-        end :: Scientific } deriving Show
+        start :: BNum,
+        end :: BNum } deriving Show
 
 data SelectionPolicy = UnionRenderers | Policies_ deriving Show
 

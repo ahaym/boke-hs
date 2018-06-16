@@ -1,17 +1,13 @@
 {-# LANGUAGE OverloadedStrings #-}
-import Graphics.BokeHS.Models
-import Graphics.BokeHS.Helpers
-import Graphics.BokeHS.Serialize (emitPlotHTML, defaultToolbar)
+import Graphics.BokeHS
 import Data.ByteString.Lazy as BS
 import Control.Monad
 import System.Process
 
-myData :: DataSource
-myData = CDS {
-        cols = [(Field "x", xcols), (Field "y", ycols)],
-        selected = Selection,
-        selectionPolicy = UnionRenderers
-    } where xcols = [-0.5,
+myData :: [(BNum, BNum)]
+myData = Prelude.zip xcols ycols
+    where 
+            xcols = [-0.5,
                      1.8333333333333335,
                      4.166666666666667,
                      6.5,
@@ -32,8 +28,9 @@ myData = CDS {
                      19.083333333333334,
                      13.25] 
 
+myData2 :: [(BNum, BNum)]
 myData2 = Prelude.zip xcols ycols
-        where
+    where
             xcols =  [-0.5,
                      1.8333333333333335,
                      4.166666666666667,
@@ -54,34 +51,22 @@ myData2 = Prelude.zip xcols ycols
                      11.916666666666668,
                      13.083333333333334,
                      14.25] 
-
-
-
 myPlot :: Plot
-myPlot = Plot{
-       backgroundFill = white,
-       width = 1000,
-       height = 1000,
-       renderers = [xaxis, yaxis, lrend],
-       title = Title "Sample bokeHS plot",
-       toolbar = defaultToolbar,
-       xRange = Range1d (-0.5) 20,
-       yRange = Range1d (-0.5) 20,
-       xScale = LinearScale,
-       yScale = LinearScale
-    } where
-        xaxis = ARend BBelow ax
-        yaxis = ARend BLeft ax
-        ax = LinearAxis{formatter=BasicTickFormatter, ticker=BasicTicker}
-        lrend = GRend GlyphRenderer { hoverGlyph = Nothing, mutedGlyph = Nothing,
-        dataSource = myData, glyph = lin, vie = CDSView}
-        lin = Line green (Field "x") (Field "y")
-
-myPlot2 :: Plot
-myPlot2 = addLine myPlot myData2 fst snd red
+myPlot = plt
+    $> addLinearAxis BBelow
+    |> addLinearAxis BLeft
+    |> addLine myData fst snd green
+    |> addLine myData2 fst snd red
+    where plt = defaultPlot{
+            width = 1000,
+            height = 1000,
+            title = "Sample BokeHS plot",
+            xRange = Range1d (-0.5) 20,
+            yRange = Range1d (-0.5) 20 
+        }
 
 main :: IO ()
 main = do
-    plotHTML <- emitPlotHTML myPlot2
+    plotHTML <- emitPlotHTML myPlot
     BS.writeFile "sample.html" plotHTML
     void $ system "firefox --new-window sample.html"    

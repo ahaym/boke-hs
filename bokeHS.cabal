@@ -35,11 +35,14 @@ data-files:          templates/bokeh.tpl
 cabal-version:       >=1.10.0
 
 library
-  exposed-modules: Graphics.BokeHS.Serialize
-                   Graphics.BokeHS.Models
-                   Graphics.BokeHS.Helpers
+  exposed-modules: Graphics.BokeHS
+
+  other-modules: Graphics.BokeHS.Serialize
+                 Graphics.BokeHS.Models
+                 Graphics.BokeHS.Helpers
+                 Paths_bokeHS
+
   GHC-Options:         -Wall
-  other-modules: Paths_bokeHS
 
   -- LANGUAGE extensions used by modules in this package.
   -- other-extensions:

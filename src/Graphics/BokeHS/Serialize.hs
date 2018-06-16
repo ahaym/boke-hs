@@ -11,7 +11,6 @@ import GHC.Exts (fromList)
 import Control.Monad.State
 import Data.Aeson
 import qualified Data.Colour.SRGB as C
-import Data.Colour.Names
 import qualified Data.HashMap.Lazy as HML
 import qualified Data.ByteString.Lazy as BS
 import qualified Data.ByteString.Lazy.Char8 as CS
@@ -97,6 +96,9 @@ instance (Bokeh a) => Bokeh (Auto a) where
 --is equal to Models.Color
 instance Bokeh (C.Colour Double) where
     makePrim = toJSON .  C.sRGB24show
+
+instance Bokeh Angle where
+    makePrim (Angle a) = toJSON a
 
 instance Bokeh Title where
     serializeNode (Title titletext) = makeRef (BType "Title") titleObj
@@ -247,53 +249,4 @@ emitPlotHTML plot = do
     template <- BS.readFile file
     let [bef, aft] = CS.split '$' template
     return $ bef `mappend` (encode . makeBokeh) plot `mappend` aft
-
-defaultToolbar :: Toolbar
-defaultToolbar = Toolbar Auto Auto Auto Auto
-
-samplesrc :: DataSource
-samplesrc = CDS {
-        cols = [(Field "x", xcols), (Field "y", ycols)],
-        selected = Selection,
-        selectionPolicy = UnionRenderers
-    } where xcols = [-0.5,
-                     1.8333333333333335,
-                     4.166666666666667,
-                     6.5,
-                     8.833333333333334,
-                     11.166666666666668,
-                     13.5,
-                     15.833333333333336,
-                     18.166666666666668,
-                     20.5]
-            ycols = [2.75,
-                     3.916666666666667,
-                     5.083333333333334,
-                     6.25,
-                     7.416666666666667,
-                     8.583333333333334,
-                     9.75,
-                     10.916666666666668,
-                     12.083333333333334,
-                     13.25] 
-
-defaultPlot :: Plot
-defaultPlot = Plot{
-       backgroundFill = white,
-       width = 400,
-       height = 400,
-       renderers = [xaxis, yaxis, lrend],
-       title = Title "Sample bokeHS plot",
-       toolbar = defaultToolbar,
-       xRange = Range1d (-0.5) 20,
-       yRange = Range1d (-0.5) 20,
-       xScale = LinearScale,
-       yScale = LinearScale
-    } where
-        xaxis = ARend BBelow ax
-        yaxis = ARend BLeft ax
-        ax = LinearAxis{formatter=BasicTickFormatter, ticker=BasicTicker}
-        lrend = GRend GlyphRenderer { hoverGlyph = Nothing, mutedGlyph = Nothing,
-        dataSource = samplesrc, glyph = lin, vie = CDSView}
-        lin = Line purple (Field "x") (Field "y")
 
