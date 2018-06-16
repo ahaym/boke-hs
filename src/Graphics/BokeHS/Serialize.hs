@@ -1,3 +1,4 @@
+{-# LANGUAGE RecordWildCards #-}
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE FlexibleContexts #-}
 {-# LANGUAGE FlexibleInstances #-}
@@ -115,22 +116,22 @@ instance Bokeh AxisWrapper where
         makeRef (BType "LinearAxis") axisObj
 
 instance Bokeh DataSource where
-    serializeNode cds = do
-        selected_ <- serializeNode (selected cds)
-        selectionPolicy_ <- serializeNode (selectionPolicy cds)
+    serializeNode CDS{..} = do
+        selected_ <- serializeNode selected
+        selectionPolicy_ <- serializeNode selectionPolicy
         let cdsObj = [("callback", Null), ("data", dataObj), 
                 ("selected", selected_), ("selection_policy", selectionPolicy_)]
         makeRef (BType "ColumnDataSource") cdsObj
         where toObj (Field ftext, nums) = (ftext, toJSON nums)
-              dataObj = (Object . fromList) $ toObj <$> cols cds
+              dataObj = (Object . fromList) $ toObj <$> cols
 
 instance Bokeh GlyphRenderer where
-    serializeNode gr = do
-        hover_glyph_ <- serializeNode (hoverGlyph gr)
-        muted_glyph_ <- serializeNode (mutedGlyph gr)
-        data_source_ <- serializeNode (dataSource gr)
-        glyph_ <- serializeNode (glyph gr)
-        view_ <- serializeNode (VWrap data_source_ (vie gr))
+    serializeNode GlyphRenderer{..} = do
+        hover_glyph_ <- serializeNode hoverGlyph
+        muted_glyph_ <- serializeNode mutedGlyph
+        data_source_ <- serializeNode dataSource
+        glyph_ <- serializeNode glyph 
+        view_ <- serializeNode (VWrap data_source_ vie)
         let grObj = [("hover_glyph", hover_glyph_), ("muted_glyph", muted_glyph_),
                 ("data_source", data_source_), ("glyph", glyph_), ("view", view_)]
         makeRef (BType "GlyphRenderer") grObj
@@ -150,8 +151,8 @@ instance Bokeh Formatter where
     serializeNode BasicTickFormatter = makeRef (BType "BasicTickFormatter") []
 
 instance Bokeh Range where
-    serializeNode range = makeRef (BType "Range1d") 
-        [("callback", Null), ("start", toJSON (start range)), ("end", toJSON (end range))]
+    serializeNode Range1d{..} = makeRef (BType "Range1d") 
+        [("callback", Null), ("start", toJSON start), ("end", toJSON end)]
 
 instance Bokeh SelectionPolicy where
     serializeNode UnionRenderers = makeRef (BType "UnionRenderers") []
@@ -166,27 +167,27 @@ instance Bokeh Glyph where
         ("x", l2o [("field", toJSON x)]),("y", l2o [("field", toJSON y)])]
 
 instance Bokeh Toolbar where
-    serializeNode bar = do
-        active_drag_ <- serializeNode (activeDrag bar)
-        active_inspect_ <- serializeNode (activeInspect bar)
-        active_scroll_ <- serializeNode (activeScroll bar)
-        active_tap_ <- serializeNode (activeTap bar)
+    serializeNode Toolbar{..} = do
+        active_drag_ <- serializeNode activeDrag
+        active_inspect_ <- serializeNode activeInspect
+        active_scroll_ <- serializeNode activeScroll
+        active_tap_ <- serializeNode activeTap
         let barObj = [("active_drag", active_drag_), ("active_scroll", active_scroll_),
                 ("active_inspect", active_inspect_), ("active_tap", active_tap_)]
         makeRef (BType "Toolbar") barObj
 
 serializePlot :: Plot -> State SerialEnv (BID, Value)
-serializePlot plt@Plot{height = plot_height, width = plot_width} = do
+serializePlot Plot{..} = do
         let curID = BID "plot_id"
         let footer = l2o [(pack "id", toJSON curID), (pack "type", toJSON $ BType"Plot")]
-        background_fill_ <- serializeNode (backgroundFill plt)
-        title_ <- serializeNode (title plt)
-        toolbar_ <- serializeNode (toolbar plt)
-        x_range_ <- serializeNode (xRange plt)
-        y_range_ <- serializeNode (yRange plt)
-        x_scale_ <- serializeNode (xScale plt)
-        y_scale_ <- serializeNode (yScale plt) 
-        renderers_ <- mapM (serializeRend footer) (renderers plt)
+        background_fill_ <- serializeNode backgroundFill 
+        title_ <- serializeNode title 
+        toolbar_ <- serializeNode toolbar 
+        x_range_ <- serializeNode xRange 
+        y_range_ <- serializeNode yRange 
+        x_scale_ <- serializeNode xScale 
+        y_scale_ <- serializeNode yScale  
+        renderers_ <- mapM (serializeRend footer) renderers 
         let lefts = (toJSON . map snd) $ filter (dPred BLeft) renderers_
             rights = (toJSON . map snd) $ filter (dPred BRight) renderers_
             aboves = (toJSON . map snd) $ filter (dPred BAbove) renderers_
@@ -194,8 +195,8 @@ serializePlot plt@Plot{height = plot_height, width = plot_width} = do
             plotAttrs = l2o [
                 ("background_fill_color", l2o [("value", background_fill_)]),
                 ("title", title_),
-                ("plot_height", toJSON plot_height),
-                ("plot_width", toJSON plot_width),
+                ("plot_height", toJSON height),
+                ("plot_width", toJSON width),
                 ("below", belows),
                 ("above", aboves),
                 ("right", rights),

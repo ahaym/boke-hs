@@ -55,7 +55,8 @@ library
                        mtl,
                        unordered-containers >= 0.2.9.0,
                        bytestring,
-                       hashable
+                       hashable,
+                       process
 
   -- Directories containing source files.
   hs-source-dirs: src
