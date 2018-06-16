@@ -10,6 +10,7 @@ myPlot = plt
     |> addLinearAxis BLeft
     |> addLine myData fst snd green
     |> addLine myData2 fst snd red
+    |> addMultiLine [myData, myData2] snd fst purple
     where plt = defaultPlot{
             width = 1000,
             height = 1000,
