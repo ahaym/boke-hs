@@ -4,6 +4,26 @@ import Data.ByteString.Lazy as BS
 import Control.Monad
 import System.Process
 
+myPlot :: Plot
+myPlot = plt
+    $> addLinearAxis BBelow
+    |> addLinearAxis BLeft
+    |> addLine myData fst snd green
+    |> addLine myData2 fst snd red
+    where plt = defaultPlot{
+            width = 1000,
+            height = 1000,
+            title = "Sample BokeHS plot",
+            xRange = Range1d (-0.5) 20,
+            yRange = Range1d (-0.5) 20 
+        }
+
+main :: IO ()
+main = do
+    plotHTML <- emitPlotHTML myPlot
+    BS.writeFile "sample.html" plotHTML
+    void $ system "firefox --new-window sample.html"    
+
 myData :: [(BNum, BNum)]
 myData = Prelude.zip xcols ycols
     where 
@@ -51,22 +71,3 @@ myData2 = Prelude.zip xcols ycols
                      11.916666666666668,
                      13.083333333333334,
                      14.25] 
-myPlot :: Plot
-myPlot = plt
-    $> addLinearAxis BBelow
-    |> addLinearAxis BLeft
-    |> addLine myData fst snd green
-    |> addLine myData2 fst snd red
-    where plt = defaultPlot{
-            width = 1000,
-            height = 1000,
-            title = "Sample BokeHS plot",
-            xRange = Range1d (-0.5) 20,
-            yRange = Range1d (-0.5) 20 
-        }
-
-main :: IO ()
-main = do
-    plotHTML <- emitPlotHTML myPlot
-    BS.writeFile "sample.html" plotHTML
-    void $ system "firefox --new-window sample.html"    
