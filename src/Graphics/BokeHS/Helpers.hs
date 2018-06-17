@@ -31,7 +31,7 @@ addLine points getx gety clr plt@Plot{renderers = rends} =
                 dataSource = src, glyph = lin, vie = CDSView}
             lin = Line clr (Field "x") (Field "y")
             src = CDS {
-                cols = [(Field "x", xs), (Field "y", ys)],
+                cols = [(Field "x", NumSpec xs), (Field "y", NumSpec ys)],
                 selected = Selection,
                 selectionPolicy = UnionRenderers
             }

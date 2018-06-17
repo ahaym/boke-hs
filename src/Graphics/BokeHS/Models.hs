@@ -1,5 +1,7 @@
 {-# LANGUAGE DeriveGeneric #-}
+{-# LANGUAGE ExistentialQuantification #-}
 {-# LANGUAGE FlexibleContexts #-}
+{-# LANGUAGE FlexibleInstances #-}
 {-# LANGUAGE AutoDeriveTypeable #-}
 {-# LANGUAGE GeneralizedNewtypeDeriving #-}
 
@@ -10,8 +12,8 @@ import Data.Scientific
 import GHC.Generics
 import Data.Aeson
 import Data.String (IsString)
-
 import qualified Data.Colour as C
+import qualified Data.Colour.SRGB as C
 
 --encodes a BokehJS Ref ID
 newtype BID = BID Text deriving (Eq, Show, Generic)
@@ -28,7 +30,7 @@ newtype Placeholder = Placeholder Value deriving (Show, Generic, Eq)
 instance ToJSON Placeholder
 
 data Plot = Plot {
-    backgroundFill :: Color,
+    backgroundFill :: C.Colour Double,
     width :: BNum,
     height :: BNum,
     renderers :: [Renderer],
@@ -40,12 +42,13 @@ data Plot = Plot {
     yScale :: Scale
     } deriving Show
 
-type Color = C.Colour Double 
+type Color = C.Colour Double
 
 type BNum = Scientific
 
 --Represents a floating-point angle in degrees
 newtype Angle = Angle BNum deriving (Show, Generic, Eq, Num)
+instance ToJSON Angle
 
 newtype Title = Title Text deriving (Show, IsString)
 
@@ -62,8 +65,16 @@ data Axis = LinearAxis {
   } deriving Show
 
 
+data Spec = 
+     NumSpec [BNum]
+   | ColorSpec [Color]
+   deriving Show
+instance ToJSON Spec where
+    toJSON (NumSpec xs) = toJSON xs
+    toJSON (ColorSpec xs) = toJSON $ C.sRGB24show <$> xs
+
 data DataSource = CDS {
-  cols :: [(Field, [BNum])]  -- FIXME use `Frames` instead
+  cols :: [(Field, Spec)]  -- FIXME use `Frames` instead
   , selected :: Selection
   , selectionPolicy :: SelectionPolicy
   } deriving Show

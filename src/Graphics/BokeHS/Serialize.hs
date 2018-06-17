@@ -10,6 +10,7 @@ import Data.Text (pack, Text)
 import GHC.Exts (fromList)
 import Control.Monad.State
 import Data.Aeson
+import Data.Coerce (coerce)
 import qualified Data.Colour.SRGB as C
 import qualified Data.HashMap.Lazy as HML
 import qualified Data.ByteString.Lazy as BS
