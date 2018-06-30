@@ -105,7 +105,7 @@ data SelectionPolicy = UnionRenderers | Policies_ deriving Show
 data Selection = Selection | Sels_ deriving Show
 
 data Glyph = Line {
-        lineColor :: Color
+          lineColor :: Color
         , xfield :: Field
         , yfield :: Field } deriving Show
 

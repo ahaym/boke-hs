@@ -11,7 +11,6 @@ myPlot = plt
     |> addLine myData fst snd green
     |> addLine myData fst (const 5) blue
     |> addLine myData2 fst snd red
-    |> addMultiLine [myData, myData2] snd fst purple
     where plt = defaultPlot{
             width = 1000,
             height = 1000,
