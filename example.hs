@@ -8,14 +8,23 @@ myPlot :: Plot
 myPlot = plt
     $> addLinearAxis BBelow
     |> addLinearAxis BLeft
-    |> addLine myData fst snd green
-    |> addLine myData2 fst snd red
+    |> addLine myData2 fst snd def
+        { lineColor = red
+        , lineAlpha = 0.6
+        , lineWidth = 6
+        , lineCap = Rounded
+        }
+    |> addLine myData fst snd def 
+        { lineColor = green
+        , lineDash = DotDash
+        , lineWidth = 3
+        }
     where plt = defaultPlot{
             width = 1000,
             height = 1000,
             title = "Sample BokeHS plot",
-            xRange = Range1d (-0.5) 20,
-            yRange = Range1d (-0.5) 20 
+            xRange = Range1d (-0.5) 22,
+            yRange = Range1d (-0.5) 22 
         }
 
 main :: IO ()

@@ -1,6 +1,6 @@
 {-# LANGUAGE RecordWildCards #-}
 {-# LANGUAGE OverloadedStrings #-}
-{-# LANGUAGE FlexibleContexts #-}
+{-# LANGUAGE DeriveGeneric #-}
 {-# LANGUAGE FlexibleInstances #-}
 {-# LANGUAGE AutoDeriveTypeable #-}
 
@@ -8,6 +8,7 @@ module Graphics.BokeHS.Serialize where
 
 import Data.Text (pack, Text)
 import GHC.Exts (fromList)
+import GHC.Generics
 import Control.Monad.State
 import Data.Aeson
 import qualified Data.Colour.SRGB as C
@@ -15,7 +16,10 @@ import qualified Data.HashMap.Lazy as HML
 import qualified Data.ByteString.Lazy as BS
 import qualified Data.ByteString.Lazy.Char8 as CS
 import Data.Aeson.Encode.Pretty (encodePretty)
+
 import Graphics.BokeHS.Models
+import Graphics.BokeHS.GlyphConfig
+import Graphics.BokeHS.Prim
 import Paths_bokeHS
 
 bokehVersion :: Text
@@ -26,6 +30,9 @@ mergeAeson = Object . HML.unions . map (\(Object o) -> o)
 
 l2o :: [(Text, Value)] -> Value
 l2o = Object . fromList
+
+newtype BNode = BNode Value deriving (Show, Generic)
+instance ToJSON BNode 
 
 --holds serialization state
 data SerialEnv = SerialEnv {
@@ -165,8 +172,10 @@ instance Bokeh Selection where
     serializeNode _ = undefined -- FIXME
 
 instance Bokeh Glyph where
-    serializeNode (Line color x y) = makeRef (BType "Line") [("line_color", makePrim color), 
-        ("x", l2o [("field", toJSON x)]),("y", l2o [("field", toJSON y)])]
+    serializeNode (Line config x y) = makeRef (BType "Line") $
+        [ ("x", l2o [("field", toJSON x)])
+        , ("y", l2o [("field", toJSON y)])
+        ] ++ mkConfig config
 
 instance Bokeh Toolbar where
     serializeNode Toolbar{..} = do

@@ -16,15 +16,23 @@ module Graphics.BokeHS(
         yScale
         ),
     Direction(..),
-    BNum,
 
     --Serialize
     emitPlotHTML,
+
+    module Graphics.BokeHS.GlyphConfig,
+    module Graphics.BokeHS.Prim,
     
     module Data.Colour.Names,
+    
+    Default(..)
     ) where
 
 import Graphics.BokeHS.Helpers
+import Graphics.BokeHS.Prim
 import Graphics.BokeHS.Models
 import Graphics.BokeHS.Serialize
+import Graphics.BokeHS.GlyphConfig
+
 import Data.Colour.Names
+import Data.Default

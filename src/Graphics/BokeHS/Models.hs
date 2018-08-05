@@ -1,4 +1,5 @@
 {-# LANGUAGE DeriveGeneric #-}
+{-# LANGUAGE ExistentialQuantification #-}
 {-# LANGUAGE FlexibleContexts #-}
 {-# LANGUAGE AutoDeriveTypeable #-}
 {-# LANGUAGE GeneralizedNewtypeDeriving #-}
@@ -6,23 +7,12 @@
 module Graphics.BokeHS.Models where
 
 import Data.Text (Text)
-import Data.Scientific
 import GHC.Generics
 import Data.Aeson
 import Data.String (IsString)
 
-import qualified Data.Colour as C
-
---encodes a BokehJS Ref ID
-newtype BID = BID Text deriving (Eq, Show, Generic)
-instance ToJSON BID
-
---encodes a BokehJS Type Declaration
-newtype BType = BType Text deriving (Eq, Show, Generic)
-instance ToJSON BType
-
-newtype BNode = BNode Value deriving (Show, Generic)
-instance ToJSON BNode 
+import Graphics.BokeHS.Prim
+import Graphics.BokeHS.GlyphConfig
 
 newtype Placeholder = Placeholder Value deriving (Show, Generic, Eq)
 instance ToJSON Placeholder
@@ -40,34 +30,23 @@ data Plot = Plot {
     yScale :: Scale
     } deriving Show
 
-type Color = C.Colour Double 
-
-type BNum = Scientific
-
---Represents a floating-point angle in degrees
-newtype Angle = Angle BNum deriving (Show, Generic, Eq, Num)
-
 newtype Title = Title Text deriving (Show, IsString)
 
-data Direction = BLeft | BRight | BAbove | BBelow | BCenter deriving (Eq, Show)
-
 data Renderer = ARend Direction Axis | GRend GlyphRenderer deriving Show
-
-newtype Field = Field Text deriving (Show, Generic)
-instance ToJSON Field
 
 data Axis = LinearAxis {
   formatter :: Formatter
   , ticker :: Ticker
   } deriving Show
 
-
-data DataSource = CDS {
-  cols :: [(Field, [BNum])]  -- FIXME use `Frames` instead
+data DataSource = forall v. ToJSON v => CDS {
+  cols :: [(Field, [v])]  -- FIXME use `Frames` instead
   , selected :: Selection
   , selectionPolicy :: SelectionPolicy
-  } deriving Show
+  }
 
+instance Show DataSource where
+    show CDS{} = "<CDS>"
 
 data GlyphRenderer = GlyphRenderer {
   hoverGlyph :: Maybe Placeholder
@@ -94,9 +73,10 @@ data SelectionPolicy = UnionRenderers | Policies_ deriving Show
 data Selection = Selection | Sels_ deriving Show
 
 data Glyph = Line {
-        lineColor :: Color
+        lineConfig :: LineConfig
         , xfield :: Field
-        , yfield :: Field } deriving Show
+        , yfield :: Field } 
+            deriving Show
 
 data Auto a = Auto | NotAuto a deriving Show
 

@@ -10,6 +10,9 @@ module Graphics.BokeHS.Helpers(
     ) where
 
 import Graphics.BokeHS.Models
+import Graphics.BokeHS.Prim
+import Graphics.BokeHS.GlyphConfig
+
 import Data.Foldable
 import Data.Colour.Names
 
@@ -22,13 +25,13 @@ infixr 0 $>
 
 --sample glyph adder function
 --r is a row type from which the data can be extracted
-addLine :: Foldable t => t r -> (r -> BNum) -> (r -> BNum) -> Color -> Plot -> Plot
-addLine points getx gety clr plt@Plot{renderers = rends} = 
+addLine :: Foldable t => t r -> (r -> BNum) -> (r -> BNum) -> LineConfig -> Plot -> Plot
+addLine points getx gety config plt@Plot{renderers = rends} = 
     plt{renderers = lrend : rends} 
         where
             lrend = GRend GlyphRenderer { hoverGlyph = Nothing, mutedGlyph = Nothing,
                 dataSource = src, glyph = lin, vie = CDSView}
-            lin = Line clr (Field "x") (Field "y")
+            lin = Line config (Field "x") (Field "y")
             src = CDS {
                 cols = [(Field "x", xs), (Field "y", ys)],
                 selected = Selection,
