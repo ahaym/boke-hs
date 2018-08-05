@@ -4,7 +4,6 @@ module Graphics.BokeHS.Helpers(
     (|>),
     ($>),
     addLine,
-    addMultiLine,
     addLinearAxis,
     defaultToolbar,
     defaultPlot
@@ -38,19 +37,6 @@ addLine points getx gety clr plt@Plot{renderers = rends} =
             xs = getx <$> foldr' (:) [] points
             ys = gety <$> foldr' (:) [] points
 
---adds multiple lines of the same color.
-addMultiLine :: (Foldable t0, Foldable t1) 
-    => t1 (t0 r) --singly nested structure of data, like [[r]]
-    -> (r -> BNum) --x getter
-    -> (r -> BNum) --y getter
-    -> Color --line color
-    -> Plot --plot to add lines to 
-    -> Plot --plot with lines added
-addMultiLine lns getx gety clr plt = foldr' ($) plt fs
-    where 
-        fs = go <$> foldr' (:) [] lns
-        go ps = addLine ps getx gety clr
-        
 --sample layout adder function
 addLinearAxis :: Direction -> Plot -> Plot
 addLinearAxis dir plt@Plot{renderers = rends} = 
