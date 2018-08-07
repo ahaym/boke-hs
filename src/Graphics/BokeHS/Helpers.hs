@@ -1,8 +1,7 @@
 {-# LANGUAGE OverloadedStrings #-}
 
 module Graphics.BokeHS.Helpers(
-    (|>),
-    ($>),
+    (%>),
     addLine,
     addLinearAxis,
     defaultToolbar,
@@ -16,12 +15,11 @@ import Graphics.BokeHS.GlyphConfig
 import Data.Foldable
 import Data.Colour.Names
 
-(|>) :: (a -> b) -> (b -> c) -> a -> c
-(|>) = flip (.)
-
-($>) :: a -> (a -> b) -> b
-($>) = flip ($)
-infixr 0 $>
+-- | Flipped ($). Same as (&) from @Control.Lens@
+(%>) :: a -> (a -> b) -> b
+x %> f = f x
+{-# INLINE (%>) #-}
+infixl 1 %>
 
 --sample glyph adder function
 --r is a row type from which the data can be extracted

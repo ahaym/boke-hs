@@ -6,15 +6,15 @@ import System.Process
 
 myPlot :: Plot
 myPlot = plt
-    $> addLinearAxis BBelow
-    |> addLinearAxis BLeft
-    |> addLine myData2 fst snd def
+    %> addLinearAxis BBelow
+    %> addLinearAxis BLeft
+    %> addLine myData2 fst snd def
         { lineColor = red
         , lineAlpha = 0.6
         , lineWidth = 6
         , lineCap = Rounded
         }
-    |> addLine myData fst snd def 
+    %> addLine myData fst snd def 
         { lineColor = green
         , lineDash = DotDash
         , lineWidth = 3
