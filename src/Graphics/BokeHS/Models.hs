@@ -1,18 +1,22 @@
 {-# LANGUAGE DeriveGeneric #-}
+{-# LANGUAGE GADTs #-}
 {-# LANGUAGE ExistentialQuantification #-}
 {-# LANGUAGE FlexibleContexts #-}
 {-# LANGUAGE AutoDeriveTypeable #-}
 {-# LANGUAGE GeneralizedNewtypeDeriving #-}
+{-# LANGUAGE RankNTypes #-}
 
 module Graphics.BokeHS.Models where
 
 import Data.Text (Text)
 import GHC.Generics
+import GHC.TypeLits
 import Data.Aeson
 import Data.String (IsString)
 
 import Graphics.BokeHS.Prim
 import Graphics.BokeHS.GlyphConfig
+import Graphics.BokeHS.CDS
 
 newtype Placeholder = Placeholder Value deriving (Show, Generic, Eq)
 instance ToJSON Placeholder
@@ -28,61 +32,61 @@ data Plot = Plot {
     yRange :: Range,
     xScale :: Scale,
     yScale :: Scale
-    } deriving Show
+    } 
 
-newtype Title = Title Text deriving (Show, IsString)
+newtype Title = Title Text deriving IsString
 
-data Renderer = ARend Direction Axis | GRend GlyphRenderer deriving Show
+data Renderer 
+    = ARend Direction Axis 
+    | forall r. GRend (GlyphRenderer r)
 
 data Axis = LinearAxis {
   formatter :: Formatter
   , ticker :: Ticker
-  } deriving Show
+  } 
 
-data DataSource = forall v. ToJSON v => CDS {
-  cols :: [(Field, [v])]  -- FIXME use `Frames` instead
+data DataSource r = CDS {
+  rows :: [r]  -- FIXME use `Frames` instead
   , selected :: Selection
   , selectionPolicy :: SelectionPolicy
-  }
+  } 
 
-instance Show DataSource where
-    show CDS{} = "<CDS>"
-
-data GlyphRenderer = GlyphRenderer {
+data GlyphRenderer r = GlyphRenderer {
   hoverGlyph :: Maybe Placeholder
   , mutedGlyph :: Maybe Placeholder
-  , dataSource :: DataSource
-  , glyph :: Glyph
-  , vie :: View } deriving Show
+  , dataSource :: DataSource r
+  , glyph :: Glyph r
+  , vie :: View } 
 
-data View = CDSView | Views_ deriving Show
-data ViewWrapper = VWrap Value View
+data View = CDSView | Views_ 
+data ViewWrapper = VWrap Value View 
 
-data Scale = LinearScale deriving Show
+data Scale = LinearScale 
 
-data Ticker = BasicTicker deriving Show
+data Ticker = BasicTicker 
  
-data Formatter = BasicTickFormatter deriving Show
+data Formatter = BasicTickFormatter 
 
 data Range = Range1d {
         start :: BNum,
-        end :: BNum } deriving Show
+        end :: BNum } 
 
-data SelectionPolicy = UnionRenderers | Policies_ deriving Show
+data SelectionPolicy = UnionRenderers | Policies_ 
 
-data Selection = Selection | Sels_ deriving Show
+data Selection = Selection | Sels_ 
 
-data Glyph = Line {
-        lineConfig :: LineConfig
-        , xfield :: Field
-        , yfield :: Field } 
-            deriving Show
+data Glyph r where
+    Line :: (KnownSymbol n0, HasColumn r n0 BNum, KnownSymbol n1, HasColumn r n1 BNum) =>
+        LineConfig -> Key n0 -> Key n1 -> Glyph r
 
-data Auto a = Auto | NotAuto a deriving Show
+getNames :: Glyph r -> [Name r]
+getNames (Line _ x y) = [Name x, Name y]
+
+data Auto a = Auto | NotAuto a 
 
 --active_drag, active_inspect, active_scroll, active_tap 
 data Toolbar = Toolbar {    
         activeDrag :: Auto Placeholder
         , activeInspect :: Auto Placeholder
         , activeScroll :: Auto Placeholder
-        , activeTap :: Auto Placeholder } deriving Show
+        , activeTap :: Auto Placeholder } 

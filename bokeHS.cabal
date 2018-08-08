@@ -39,6 +39,7 @@ library
 
   other-modules: Graphics.BokeHS.Serialize
                  Graphics.BokeHS.Models
+                 Graphics.BokeHS.CDS
                  Graphics.BokeHS.Helpers
                  Graphics.BokeHS.Prim
                  Graphics.BokeHS.GlyphConfig

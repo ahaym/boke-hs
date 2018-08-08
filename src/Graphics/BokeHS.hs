@@ -19,15 +19,18 @@ module Graphics.BokeHS(
 
     --Serialize
     emitPlotHTML,
-
+    
+    module Graphics.BokeHS.CDS,
     module Graphics.BokeHS.GlyphConfig,
     module Graphics.BokeHS.Prim,
     
     module Data.Colour.Names,
+
     
     Default(..)
     ) where
 
+import Graphics.BokeHS.CDS
 import Graphics.BokeHS.Helpers
 import Graphics.BokeHS.Prim
 import Graphics.BokeHS.Models
