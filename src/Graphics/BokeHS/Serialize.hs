@@ -17,6 +17,7 @@ import qualified Data.ByteString.Lazy as BS
 import qualified Data.ByteString.Lazy.Char8 as CS
 import Data.Aeson.Encode.Pretty (encodePretty)
 
+import Graphics.BokeHS.CDS
 import Graphics.BokeHS.Models
 import Graphics.BokeHS.GlyphConfig
 import Graphics.BokeHS.Prim
@@ -124,21 +125,23 @@ instance Bokeh AxisWrapper where
         let axisObj = [("formatter", formatter_), ("plot", parentRef), ("ticker", ticker_)]
         makeRef (BType "LinearAxis") axisObj
 
-instance Bokeh DataSource where
-    serializeNode CDS{..} = do
+instance Bokeh ([Name r], DataSource r) where
+    serializeNode (names, CDS{..}) = do
         selected_ <- serializeNode selected
         selectionPolicy_ <- serializeNode selectionPolicy
         let cdsObj = [("callback", Null), ("data", dataObj), 
                 ("selected", selected_), ("selection_policy", selectionPolicy_)]
         makeRef (BType "ColumnDataSource") cdsObj
         where toObj (Field ftext, nums) = (ftext, toJSON nums)
-              dataObj = (Object . fromList) $ toObj <$> cols
+              dataObj = (Object . fromList) $ 
+                toObj <$> allTheStuff rows names
 
-instance Bokeh GlyphRenderer where
+instance Bokeh (GlyphRenderer r) where
     serializeNode GlyphRenderer{..} = do
         hover_glyph_ <- serializeNode hoverGlyph
         muted_glyph_ <- serializeNode mutedGlyph
-        data_source_ <- serializeNode dataSource
+        let names = getNames glyph
+        data_source_ <- serializeNode (names, dataSource)
         glyph_ <- serializeNode glyph 
         view_ <- serializeNode (VWrap data_source_ vie)
         let grObj = [("hover_glyph", hover_glyph_), ("muted_glyph", muted_glyph_),
@@ -171,10 +174,10 @@ instance Bokeh Selection where
     serializeNode Selection = makeRef (BType "Selection") []
     serializeNode _ = undefined -- FIXME
 
-instance Bokeh Glyph where
+instance Bokeh (Glyph r) where
     serializeNode (Line config x y) = makeRef (BType "Line") $
-        [ ("x", l2o [("field", toJSON x)])
-        , ("y", l2o [("field", toJSON y)])
+        [ ("x", l2o [("field", toJSON $ fieldName x)])
+        , ("y", l2o [("field", toJSON $ fieldName y)])
         ] ++ mkConfig config
 
 instance Bokeh Toolbar where
